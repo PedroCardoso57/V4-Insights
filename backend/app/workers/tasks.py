@@ -5,7 +5,8 @@ from __future__ import annotations
 import logging
 
 from app.db.session import get_sessionmaker
-from app.services import relatorios, sync
+from app.services import alertas as alertas_svc
+from app.services import relatorios, retencao, sync
 from app.workers.celery_app import celery_app
 
 log = logging.getLogger(__name__)
@@ -41,5 +42,25 @@ def limpar_relatorios() -> None:
         n = relatorios.limpar_expirados(db)
         if n:
             log.info("relatórios expirados removidos: %s", n)
+    finally:
+        db.close()
+
+
+@celery_app.task(name="v4.alertas")
+def alertas() -> None:
+    db = get_sessionmaker()()
+    try:
+        alertas_svc.verificar(db)
+    finally:
+        db.close()
+
+
+@celery_app.task(name="v4.manutencao")
+def manutencao() -> None:
+    db = get_sessionmaker()()
+    try:
+        r = retencao.expurgar(db)
+        if any(r.values()):
+            log.info("retenção: %s", r)
     finally:
         db.close()

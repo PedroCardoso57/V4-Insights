@@ -17,6 +17,7 @@ from app.api.v1.routes import (
 )
 from app.core.config import get_settings
 from app.core.logging import configure_logging
+from app.core.metricas_app import MetricsMiddleware, resposta_metricas
 
 API_PREFIX = "/api/v1"
 
@@ -42,6 +43,9 @@ def create_app() -> FastAPI:
         expose_headers=["X-Request-ID"],
     )
     errors.install(app)
+    app.add_middleware(MetricsMiddleware)
+    # Métricas Prometheus: só na rede interna (o proxy não encaminha /metrics).
+    app.add_api_route("/metrics", resposta_metricas, include_in_schema=False)
     app.include_router(health.router)  # /health/live e /health/ready (fora do versionamento)
     v1 = APIRouter(prefix=API_PREFIX, responses=ERROR_RESPONSES)
     for r in (auth, usuarios, clientes, integracoes, metricas, dashboards, relatorios, auditoria):

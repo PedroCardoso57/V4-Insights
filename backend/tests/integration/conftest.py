@@ -41,6 +41,10 @@ def _clean() -> Iterator[None]:
     tables = ", ".join(t.name for t in Base.metadata.sorted_tables if t.name != "perfis")
     with get_engine().begin() as conn:
         conn.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
+    # Contadores de rate limit e deduplicação de alertas não vazam entre testes.
+    r = queue.get_redis()
+    for k in r.scan_iter("v4:*"):
+        r.delete(k)
 
 
 class Fila:
@@ -85,7 +89,7 @@ class ApiClient(TestClient):
         if (
             isinstance(url, str)
             and url.startswith("/")
-            and not url.startswith(("/api/", "/health", "/openapi.json", "/docs"))
+            and not url.startswith(("/api/", "/health", "/openapi.json", "/docs", "/metrics"))
         ):
             url = API_V1 + url
         headers = dict(kw.pop("headers", None) or {})

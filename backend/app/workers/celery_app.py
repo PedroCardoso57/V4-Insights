@@ -21,6 +21,11 @@ celery_app.conf.update(
     task_acks_late=True,  # job só sai da fila quando concluído (worker caído → reentrega)
     task_reject_on_worker_lost=True,
     worker_prefetch_multiplier=1,
+    # Limites de recursos: tarefa travada é interrompida; worker recicla processos.
+    task_soft_time_limit=1800,
+    task_time_limit=2100,
+    worker_max_tasks_per_child=200,
+    worker_max_memory_per_child=400_000,  # KiB
     task_default_queue="v4",
     broker_connection_retry_on_startup=True,
     broker_transport_options={"visibility_timeout": 4 * 3600},
@@ -29,6 +34,8 @@ celery_app.conf.update(
     beat_schedule={
         "agendar-sincronizacoes": {"task": "v4.agendador", "schedule": 300.0},
         "limpar-relatorios-expirados": {"task": "v4.limpar_relatorios", "schedule": 3600.0},
+        "alertas-operacionais": {"task": "v4.alertas", "schedule": 900.0},
+        "retencao-lgpd": {"task": "v4.manutencao", "schedule": 86400.0},
     },
 )
 
