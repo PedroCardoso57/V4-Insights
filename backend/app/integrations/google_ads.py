@@ -13,7 +13,7 @@ from decimal import Decimal
 from typing import Any
 from urllib.parse import urlencode
 
-from app.config import get_settings
+from app.core.config import get_settings
 from app.core.oidc import pkce_challenge
 from app.integrations.base import (
     ConfigProviderError,
@@ -35,7 +35,7 @@ _RESOURCE = {"campanha": "campaign", "conjunto": "ad_group", "anuncio": "ad_grou
 
 
 def redirect_uri() -> str:
-    return f"{get_settings().api_base_url.rstrip('/')}/integracoes/google_ads/callback"
+    return f"{get_settings().api_v1_url}/integracoes/google_ads/callback"
 
 
 class GoogleAdsProvider:
@@ -192,7 +192,7 @@ class GoogleAdsProvider:
         if nivel == "conjunto":
             select += ["ad_group.id", "ad_group.name"]
         elif nivel == "anuncio":
-            select += ["ad_group_ad.ad.id", "ad_group_ad.ad.name"]
+            select += ["ad_group.id", "ad_group.name", "ad_group_ad.ad.id", "ad_group_ad.ad.name"]
         query = (
             f"SELECT {', '.join(select)} FROM {resource} "  # noqa: S608 - GAQL com valores validados
             f"WHERE segments.date BETWEEN '{inicio.isoformat()}' AND '{fim.isoformat()}'"
@@ -200,6 +200,7 @@ class GoogleAdsProvider:
         for row in self._search(credentials, id_externo, query):
             m = row.get("metrics", {})
             camp = row.get("campaign", {})
+            grupo = row.get("adGroup") or {}
             if nivel == "campanha":
                 ent_id, ent_nome = camp.get("id"), camp.get("name")
             elif nivel == "conjunto":
@@ -214,6 +215,8 @@ class GoogleAdsProvider:
                 entidade_nome=ent_nome,
                 campanha_externa_id=str(camp.get("id")) if camp.get("id") else None,
                 campanha_nome=camp.get("name"),
+                conjunto_externo_id=str(grupo["id"]) if grupo.get("id") else None,
+                conjunto_nome=grupo.get("name"),
                 investimento=(to_decimal(m.get("costMicros")) / Decimal(1_000_000)),
                 impressoes=to_int(m.get("impressions")),
                 cliques=to_int(m.get("clicks")),

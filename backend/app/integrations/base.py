@@ -57,6 +57,8 @@ class MetricRow:
     investimento: Decimal
     impressoes: int
     cliques: int
+    conjunto_externo_id: str | None = None
+    conjunto_nome: str | None = None
     # {"acoes": {tipo: {janela: n}}, "valores": {tipo: {janela: n}}}
     conversoes_detalhe: dict[str, Any] = field(default_factory=dict)
     extras: dict[str, Any] = field(default_factory=dict)

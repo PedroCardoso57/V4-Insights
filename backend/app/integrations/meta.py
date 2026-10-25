@@ -8,7 +8,7 @@ from datetime import date
 from typing import Any
 from urllib.parse import urlencode
 
-from app.config import get_settings
+from app.core.config import get_settings
 from app.integrations.base import (
     ConfigProviderError,
     ExternalAccount,
@@ -31,11 +31,11 @@ _ID_FIELD = {"campanha": "campaign", "conjunto": "adset", "anuncio": "ad"}
 
 
 def redirect_uri() -> str:
-    return f"{get_settings().api_base_url.rstrip('/')}/integracoes/meta/callback"
+    return f"{get_settings().api_v1_url}/integracoes/meta_ads/callback"
 
 
 class MetaProvider:
-    plataforma = "meta"
+    plataforma = "meta_ads"
 
     def __init__(self) -> None:
         s = get_settings()
@@ -145,8 +145,10 @@ class MetaProvider:
             "date_start",
             "account_currency",
         ]
-        if idf != "campaign":
-            fields += [f"{idf}_id", f"{idf}_name"]
+        if idf == "adset":
+            fields += ["adset_id", "adset_name"]
+        elif idf == "ad":
+            fields += ["adset_id", "adset_name", "ad_id", "ad_name"]
         params: dict[str, Any] = {
             "level": level,
             "time_increment": 1,
@@ -167,6 +169,8 @@ class MetaProvider:
                 entidade_nome=item.get(f"{idf}_name"),
                 campanha_externa_id=item.get("campaign_id"),
                 campanha_nome=item.get("campaign_name"),
+                conjunto_externo_id=item.get("adset_id"),
+                conjunto_nome=item.get("adset_name"),
                 investimento=to_decimal(item.get("spend")),
                 impressoes=to_int(item.get("impressions")),
                 cliques=to_int(item.get("clicks")),

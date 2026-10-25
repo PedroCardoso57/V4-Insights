@@ -16,7 +16,8 @@ dependencies = [
     "pyjwt[crypto]>=2.8",
     "cryptography>=42",
     "redis>=5.0",
-    "rq>=1.16",
+    "celery[redis]>=5.4",
+    "reportlab>=4.2",
 ]
 
 [dependency-groups]
@@ -39,9 +40,13 @@ target-version = "py312"
 select = ["E", "F", "I", "B", "UP", "S", "C4", "SIM"]
 ignore = ["B008", "S101", "S105", "S106"]
 
+[tool.ruff.lint.isort]
+# backend/alembic/ (migrations) não deve ser confundido com o pacote alembic.
+known-third-party = ["alembic"]
+
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "B"]
-"migrations/**" = ["E501"]
+"alembic/**" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -49,7 +54,7 @@ plugins = ["pydantic.mypy"]
 ignore_missing_imports = true
 warn_unused_ignores = true
 check_untyped_defs = true
-exclude = ["migrations/"]
+exclude = ["alembic/"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -13,7 +13,7 @@ def _defaults() -> dict[str, Callable[[], Any]]:
     from app.integrations.google_ads import GoogleAdsProvider
     from app.integrations.meta import MetaProvider
 
-    return {Plataforma.meta.value: MetaProvider, Plataforma.google_ads.value: GoogleAdsProvider}
+    return {Plataforma.meta_ads.value: MetaProvider, Plataforma.google_ads.value: GoogleAdsProvider}
 
 
 def get_provider(plataforma: str) -> AdsProvider:
