@@ -8,8 +8,8 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import create_engine, pool
 
-from app import models  # noqa: F401  (registra tabelas no metadata)
-from app.db import Base
+import app.models  # noqa: F401  (registra tabelas no metadata)
+from app.db.session import Base
 
 config = context.config
 if config.config_file_name is not None:
