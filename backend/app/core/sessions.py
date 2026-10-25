@@ -39,9 +39,12 @@ def create_session(db: Session, usuario_id: uuid.UUID, request: Request) -> tupl
     return token, csrf, sessao
 
 
-def set_session_cookies(response: Response, token: str, csrf: str) -> None:
+def set_session_cookies(
+    response: Response, token: str, csrf: str, *, persistente: bool = True
+) -> None:
+    """Grava os cookies. `persistente=False` gera cookies de sessão do navegador."""
     settings = get_settings()
-    max_age = settings.session_ttl_hours * 3600
+    max_age = settings.session_ttl_hours * 3600 if persistente else None
     response.set_cookie(
         settings.session_cookie_name,
         token,

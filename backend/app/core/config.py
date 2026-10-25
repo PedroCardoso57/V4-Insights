@@ -66,6 +66,8 @@ class Settings(BaseSettings):
 
     # Rate limit (SPEC-07): "<requisições>/<segundos>"; vazio desativa.
     rate_limit_login: str = "20/60"
+    # Tentativas de senha por e-mail (contra força bruta distribuída em vários IPs).
+    rate_limit_login_email: str = "10/900"
     rate_limit_operacoes_caras: str = "10/60"
 
     # Retenção (LGPD): dados operacionais expurgados automaticamente.

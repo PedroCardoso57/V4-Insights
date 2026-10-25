@@ -754,6 +754,21 @@
         "title": "DashboardUpdate",
         "type": "object"
       },
+      "DefinirSenhaIn": {
+        "properties": {
+          "nova_senha": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Nova Senha",
+            "type": "string"
+          }
+        },
+        "required": [
+          "nova_senha"
+        ],
+        "title": "DefinirSenhaIn",
+        "type": "object"
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -1135,6 +1150,32 @@
         "title": "Kpis",
         "type": "object"
       },
+      "LoginSenhaIn": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "manter_conectado": {
+            "default": true,
+            "title": "Manter Conectado",
+            "type": "boolean"
+          },
+          "senha": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Senha",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "senha"
+        ],
+        "title": "LoginSenhaIn",
+        "type": "object"
+      },
       "MapeamentoConversoes": {
         "description": "Ações do provedor contadas como conversão e janela de atribuição (opcional).",
         "properties": {
@@ -1179,6 +1220,11 @@
           },
           "papel": {
             "$ref": "#/components/schemas/Papel"
+          },
+          "tem_senha": {
+            "default": false,
+            "title": "Tem Senha",
+            "type": "boolean"
           }
         },
         "required": [
@@ -2167,6 +2213,33 @@
         "title": "TipoJob",
         "type": "string"
       },
+      "TrocarSenhaIn": {
+        "properties": {
+          "nova_senha": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Nova Senha",
+            "type": "string"
+          },
+          "senha_atual": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Senha Atual"
+          }
+        },
+        "required": [
+          "nova_senha"
+        ],
+        "title": "TrocarSenhaIn",
+        "type": "object"
+      },
       "UsuarioCreate": {
         "properties": {
           "ativo": {
@@ -2224,6 +2297,11 @@
           "papel": {
             "title": "Papel",
             "type": "string"
+          },
+          "tem_senha": {
+            "default": false,
+            "title": "Tem Senha",
+            "type": "boolean"
           },
           "ultimo_login_em": {
             "anyOf": [
@@ -2751,6 +2829,77 @@
         ]
       }
     },
+    "/api/v1/auth/login": {
+      "post": {
+        "description": "Login por e-mail e senha para usuários pré-cadastrados com senha definida.\n\nA resposta é a mesma para e-mail inexistente, senha errada, usuário sem senha ou\ninativo (não revela quem está cadastrado). Sem sessão ainda, a proteção contra\nlogin CSRF é a verificação de Origin.",
+        "operationId": "login_senha_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginSenhaIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Credenciais inválidas"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "CONFLICT"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR"
+          },
+          "429": {
+            "description": "Limite"
+          }
+        },
+        "summary": "Login Senha",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/auth/logout": {
       "post": {
         "operationId": "logout_api_v1_auth_logout_post",
@@ -2901,6 +3050,91 @@
           }
         },
         "summary": "Me",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/senha": {
+      "put": {
+        "description": "Define ou troca a própria senha. Com senha já definida, exige a senha atual.\n\nAs demais sessões do usuário são encerradas; a sessão atual continua válida.",
+        "operationId": "trocar_senha_api_v1_auth_senha_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrocarSenhaIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "CONFLICT"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "RATE_LIMITED"
+          }
+        },
+        "summary": "Trocar Senha",
         "tags": [
           "auth"
         ]
@@ -7316,6 +7550,188 @@
           }
         },
         "summary": "Atribuir Cliente",
+        "tags": [
+          "usuarios"
+        ]
+      }
+    },
+    "/api/v1/usuarios/{usuario_id}/senha": {
+      "delete": {
+        "description": "Remove a senha local: o colaborador volta a entrar somente com Google.",
+        "operationId": "remover_senha_api_v1_usuarios__usuario_id__senha_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "usuario_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Usuario Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "CONFLICT"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "RATE_LIMITED"
+          }
+        },
+        "summary": "Remover Senha",
+        "tags": [
+          "usuarios"
+        ]
+      },
+      "put": {
+        "description": "Admin define uma senha inicial ou redefine a de um colaborador.\n\nEncerra as sessões abertas do colaborador; a senha não é registrada em lugar algum.",
+        "operationId": "definir_senha_api_v1_usuarios__usuario_id__senha_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "usuario_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Usuario Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefinirSenhaIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "CONFLICT"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "RATE_LIMITED"
+          }
+        },
+        "summary": "Definir Senha",
         "tags": [
           "usuarios"
         ]

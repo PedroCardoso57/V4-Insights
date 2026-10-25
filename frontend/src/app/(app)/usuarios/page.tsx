@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { PencilIcon, PlusIcon, SearchIcon } from "lucide-react";
+import { KeyRoundIcon, PencilIcon, PlusIcon, SearchIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -20,10 +20,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useSenhaUsuario } from "@/features/auth/api";
 import { useSalvarUsuario, useUsuarios, type Usuario } from "@/features/usuarios/api";
 import { useMe } from "@/hooks/use-me";
 import { fmtDataHora, PAPEL_LABEL, type Papel } from "@/lib/format";
 import { pode } from "@/lib/permissoes";
+import { novaSenha } from "@/lib/senha";
 
 const schema = z.object({
   nome: z.string().trim().min(2, "Informe o nome").max(180),
@@ -40,6 +42,7 @@ export default function UsuariosPage() {
   const [texto, setTexto] = useState("");
   const [busca, setBusca] = useState<string>();
   const [editando, setEditando] = useState<Usuario | "novo" | null>(null);
+  const [senhaDe, setSenhaDe] = useState<Usuario | null>(null);
   const q = useUsuarios({ page, search: busca }, admin);
 
   if (!admin) return <Alert variant="warning">A administração de usuários é restrita a administradores.</Alert>;
@@ -47,7 +50,7 @@ export default function UsuariosPage() {
     <>
       <PageHeader
         titulo="Usuários"
-        descricao="Não há autocadastro: cadastre o e-mail Google do colaborador e defina o perfil."
+        descricao="Não há autocadastro: cadastre o e-mail corporativo do colaborador, defina o perfil e, se ele não usar Google, uma senha inicial."
         acoes={<Button onClick={() => setEditando("novo")}><PlusIcon /> Novo usuário</Button>}
       />
       <form className="mb-5 flex flex-wrap items-center gap-2 rounded-xl border bg-card p-4 shadow-xs" role="search" onSubmit={(e) => { e.preventDefault(); setPage(1); setBusca(texto.trim() || undefined); }}>
@@ -77,11 +80,18 @@ export default function UsuariosPage() {
                     <TableCell>{PAPEL_LABEL[u.papel as Papel]}</TableCell>
                     <TableCell className="flex flex-wrap gap-1">
                       <Badge ponto variant={u.ativo ? "success" : "destructive"}>{u.ativo ? "ativo" : "inativo"}</Badge>
-                      {!u.vinculado_google && <Badge ponto variant="warning">nunca entrou</Badge>}
+                      {!u.ultimo_login_em && <Badge ponto variant="warning">nunca entrou</Badge>}
+                      {u.vinculado_google && <Badge variant="info">Google</Badge>}
+                      {u.tem_senha && <Badge variant="outline">senha</Badge>}
                     </TableCell>
-                    <TableCell>{fmtDataHora(u.ultimo_login_em)}</TableCell>
+                    <TableCell className="font-mono-num text-xs text-muted-foreground">{fmtDataHora(u.ultimo_login_em)}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => setEditando(u)} aria-label={`Editar ${u.nome}`}><PencilIcon /></Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => setSenhaDe(u)} aria-label={`Senha de ${u.nome}`} title="Definir senha">
+                        <KeyRoundIcon />
+                      </Button>
+                      <Button variant="ghost" size="icon-sm" onClick={() => setEditando(u)} aria-label={`Editar ${u.nome}`} title="Editar">
+                        <PencilIcon />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -93,6 +103,7 @@ export default function UsuariosPage() {
         )}
       </Consulta>
       <UsuarioDialog alvo={editando} proprio={me?.id} onClose={() => setEditando(null)} />
+      <SenhaDialog alvo={senhaDe} onClose={() => setSenhaDe(null)} />
     </>
   );
 }
@@ -119,7 +130,7 @@ function UsuarioDialog({ alvo, proprio, onClose }: { alvo: Usuario | "novo" | nu
         </DialogHeader>
         <form id="form-usuario" className="grid gap-4" onSubmit={handleSubmit(enviar)} noValidate>
           <Field id="u-nome" label="Nome" error={formState.errors.nome}>{(a) => <Input {...a} {...register("nome")} />}</Field>
-          <Field id="u-email" label="E-mail Google corporativo" error={formState.errors.email}>
+          <Field id="u-email" label="E-mail corporativo" error={formState.errors.email}>
             {(a) => <Input type="email" {...a} {...register("email")} disabled={!!u} />}
           </Field>
           <Field id="u-papel" label="Perfil">
@@ -145,6 +156,70 @@ function UsuarioDialog({ alvo, proprio, onClose }: { alvo: Usuario | "novo" | nu
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button type="submit" form="form-usuario" disabled={salvar.isPending}>Salvar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const schemaSenha = z
+  .object({ nova: novaSenha, confirmacao: z.string() })
+  .refine((v) => v.nova === v.confirmacao, { path: ["confirmacao"], message: "As senhas não conferem." });
+
+/** Admin define a senha inicial ou redefine a de um colaborador (encerra as sessões dele). */
+function SenhaDialog({ alvo, onClose }: { alvo: Usuario | null; onClose: () => void }) {
+  const senha = useSenhaUsuario();
+  const { register, handleSubmit, reset, formState } = useForm<z.infer<typeof schemaSenha>>({ resolver: zodResolver(schemaSenha) });
+  useEffect(() => {
+    if (alvo) reset({ nova: "", confirmacao: "" });
+  }, [alvo, reset]);
+  if (!alvo) return null;
+  const ok = (msg: string) => () => {
+    toast.success(msg);
+    onClose();
+  };
+  const erro = (e: unknown) => toast.error(mensagemDeErro(e));
+  return (
+    <Dialog open onOpenChange={(v) => !v && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{alvo.tem_senha ? "Redefinir senha" : "Definir senha"}</DialogTitle>
+          <DialogDescription>
+            {alvo.nome} poderá entrar com <strong>{alvo.email}</strong> e esta senha. Compartilhe-a por um canal seguro
+            e peça a troca em Configurações; as sessões abertas do colaborador serão encerradas.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          id="form-senha"
+          className="grid gap-4"
+          noValidate
+          onSubmit={handleSubmit((v) =>
+            senha.mutate({ id: alvo.id, nova_senha: v.nova }, { onSuccess: ok("Senha definida."), onError: erro }),
+          )}
+        >
+          <Field id="s-nova" label="Nova senha" error={formState.errors.nova} hint="Mínimo de 10 caracteres.">
+            {(a) => <Input type="password" autoComplete="new-password" {...a} {...register("nova")} />}
+          </Field>
+          <Field id="s-conf" label="Confirmar senha" error={formState.errors.confirmacao}>
+            {(a) => <Input type="password" autoComplete="new-password" {...a} {...register("confirmacao")} />}
+          </Field>
+        </form>
+        <DialogFooter className="sm:justify-between">
+          {alvo.tem_senha ? (
+            <Button
+              variant="destructive"
+              disabled={senha.isPending}
+              onClick={() => senha.mutate({ id: alvo.id, nova_senha: null }, { onSuccess: ok("Senha removida: acesso somente com Google."), onError: erro })}
+            >
+              Remover senha
+            </Button>
+          ) : (
+            <span />
+          )}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+            <Button variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button type="submit" form="form-senha" disabled={senha.isPending}>Salvar senha</Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

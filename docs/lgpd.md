@@ -8,6 +8,7 @@
 | Dado | Titular | Onde | Finalidade | Retenção padrão |
 |---|---|---|---|---|
 | Nome, e-mail, perfil, vínculo Google (`sub`) | Colaborador | `usuarios` | Autenticação e autorização | Enquanto ativo; anonimização sob pedido ou desligamento |
+| Hash Argon2id da senha (opcional) | Colaborador | `usuarios.senha_hash` | Login por e-mail e senha | Até remoção pelo admin ou anonimização; a senha em si nunca é guardada |
 | IP e user-agent de sessão | Colaborador | `sessoes` | Segurança e revogação | `SESSIONS_RETENTION_DAYS` (30) após expirar/revogar |
 | Trilha de ações e IP | Colaborador | `auditoria` | Segurança e prestação de contas | `AUDIT_RETENTION_DAYS` (730) |
 | CPF opcional de cliente pessoa física | Cliente PF | `clientes.documento` | Identificação do cliente | Enquanto o cliente existir; pode ser apagado na edição |
@@ -24,7 +25,7 @@ O expurgo de sessões, states OAuth e auditoria vencidos roda diariamente no wor
 |---|---|
 | Acesso / portabilidade | `docker compose run --rm api python -m app.cli lgpd-exportar --email pessoa@empresa.com --out titular.json` — perfil, carteira, sessões e trilha de auditoria em JSON. |
 | Correção | Admin edita nome/perfil na tela **Usuários**. |
-| Eliminação / anonimização | `... python -m app.cli lgpd-anonimizar --email pessoa@empresa.com --confirmar` — desativa, troca nome/e-mail por valores anônimos, desvincula o Google, revoga sessões e remove IPs; a trilha de auditoria permanece sem identificação para preservar a integridade. |
+| Eliminação / anonimização | `... python -m app.cli lgpd-anonimizar --email pessoa@empresa.com --confirmar` — desativa, troca nome/e-mail por valores anônimos, desvincula o Google, apaga o hash da senha, revoga sessões e remove IPs; a trilha de auditoria permanece sem identificação para preservar a integridade. |
 | Revogar acesso imediatamente | `... python -m app.cli revogar-sessoes --email pessoa@empresa.com` e desativar o usuário. |
 
 Todos esses comandos ficam registrados na auditoria. Registre o pedido, a data e a resposta no

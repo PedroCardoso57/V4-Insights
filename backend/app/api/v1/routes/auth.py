@@ -6,18 +6,25 @@ from html import escape
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.api.deps import Principal, get_principal
-from app.core import oidc
+from app.api.errors import AppError
+from app.core import oidc, senhas
 from app.core.config import get_settings
 from app.core.crypto import random_token, sha256_hex
-from app.core.ratelimit import por_ip, regra
-from app.core.sessions import clear_session_cookies, create_session, now, set_session_cookies
+from app.core.ratelimit import por_ip, regra, verificar
+from app.core.sessions import (
+    clear_session_cookies,
+    create_session,
+    now,
+    origin_allowed,
+    set_session_cookies,
+)
 from app.db.session import get_db
-from app.models import OAuthState, Usuario
-from app.schemas import MeOut
+from app.models import OAuthState, Sessao, Usuario
+from app.schemas import LoginSenhaIn, MeOut, TrocarSenhaIn
 from app.services.audit import registrar
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -146,10 +153,114 @@ def _negar(status_code: int, codigo: str) -> HTMLResponse:
     return HTMLResponse(html, status_code=status_code)
 
 
+CREDENCIAIS_INVALIDAS = "E-mail ou senha inválidos."
+
+
+@router.post(
+    "/login",
+    status_code=204,
+    dependencies=[Depends(por_ip("login", regra("login")))],
+    responses={401: {"description": "Credenciais inválidas"}, 429: {"description": "Limite"}},
+)
+def login_senha(body: LoginSenhaIn, request: Request, db: Session = Depends(get_db)) -> Response:
+    """Login por e-mail e senha para usuários pré-cadastrados com senha definida.
+
+    A resposta é a mesma para e-mail inexistente, senha errada, usuário sem senha ou
+    inativo (não revela quem está cadastrado). Sem sessão ainda, a proteção contra
+    login CSRF é a verificação de Origin.
+    """
+    if not origin_allowed(request):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Falha na verificação de Origin")
+    email = oidc.normalize_email(body.email)
+    verificar(f"login_senha:email:{sha256_hex(email)}", regra("login_email")())
+    usuario = db.scalar(select(Usuario).where(func.lower(Usuario.email) == email))
+    ok = senhas.verificar(usuario.senha_hash if usuario else None, body.senha)
+    if usuario is None or not ok or not usuario.ativo:
+        if usuario is not None:
+            motivo = "inativo" if ok else ("sem_senha" if usuario.senha_hash is None else "senha")
+            registrar(
+                db,
+                usuario_id=usuario.id,
+                acao="login_negado",
+                entidade="usuario",
+                entidade_id=usuario.id,
+                dados={"metodo": "senha", "motivo": motivo},
+                request=request,
+            )
+            db.commit()
+        raise AppError(401, CREDENCIAIS_INVALIDAS, code="INVALID_CREDENTIALS")
+
+    if usuario.senha_hash and senhas.precisa_rehash(usuario.senha_hash):
+        usuario.senha_hash = senhas.gerar_hash(body.senha)
+    usuario.ultimo_login_em = now()
+    token, csrf, _ = create_session(db, usuario.id, request)
+    registrar(
+        db,
+        usuario_id=usuario.id,
+        acao="login",
+        entidade="usuario",
+        entidade_id=usuario.id,
+        dados={"metodo": "senha"},
+        request=request,
+    )
+    db.commit()
+    response = Response(status_code=204)
+    set_session_cookies(response, token, csrf, persistente=body.manter_conectado)
+    return response
+
+
+@router.put(
+    "/senha",
+    status_code=204,
+    dependencies=[Depends(por_ip("senha", regra("login")))],
+)
+def trocar_senha(
+    body: TrocarSenhaIn,
+    request: Request,
+    principal: Principal = Depends(get_principal),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Define ou troca a própria senha. Com senha já definida, exige a senha atual.
+
+    As demais sessões do usuário são encerradas; a sessão atual continua válida.
+    """
+    u = db.merge(principal.usuario)
+    if u.senha_hash is not None and not senhas.verificar(u.senha_hash, body.senha_atual or ""):
+        raise AppError(400, "Senha atual incorreta.", code="INVALID_CREDENTIALS")
+    try:
+        senhas.validar_politica(body.nova_senha, u.email)
+    except senhas.SenhaFraca as exc:
+        raise AppError(422, str(exc), code="WEAK_PASSWORD") from exc
+    definida = u.senha_hash is None
+    u.senha_hash = senhas.gerar_hash(body.nova_senha)
+    u.senha_atualizada_em = now()
+    db.execute(
+        update(Sessao)
+        .where(
+            Sessao.usuario_id == u.id,
+            Sessao.revogado_em.is_(None),
+            Sessao.id != principal.sessao.id,
+        )
+        .values(revogado_em=now())
+    )
+    registrar(
+        db,
+        usuario_id=u.id,
+        acao="definir_senha" if definida else "trocar_senha",
+        entidade="usuario",
+        entidade_id=u.id,
+        request=request,
+    )
+    db.commit()
+    return Response(status_code=204)
+
+
 @router.get("/me", response_model=MeOut)
 def me(principal: Principal = Depends(get_principal)) -> MeOut:
     u = principal.usuario
-    return MeOut(id=u.id, nome=u.nome, email=u.email, papel=u.papel)
+    return MeOut(
+        id=u.id, nome=u.nome, email=u.email, papel=u.papel, tem_senha=u.senha_hash is not None
+    )
 
 
 @router.post("/logout", status_code=204)

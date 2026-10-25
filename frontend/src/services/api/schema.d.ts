@@ -55,6 +55,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Login Senha
+         * @description Login por e-mail e senha para usuários pré-cadastrados com senha definida.
+         *
+         *     A resposta é a mesma para e-mail inexistente, senha errada, usuário sem senha ou
+         *     inativo (não revela quem está cadastrado). Sem sessão ainda, a proteção contra
+         *     login CSRF é a verificação de Origin.
+         */
+        post: operations["login_senha_api_v1_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/logout": {
         parameters: {
             query?: never;
@@ -82,6 +106,28 @@ export interface paths {
         /** Me */
         get: operations["me_api_v1_auth_me_get"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/senha": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Trocar Senha
+         * @description Define ou troca a própria senha. Com senha já definida, exige a senha atual.
+         *
+         *     As demais sessões do usuário são encerradas; a sessão atual continua válida.
+         */
+        put: operations["trocar_senha_api_v1_auth_senha_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -566,6 +612,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/usuarios/{usuario_id}/senha": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Definir Senha
+         * @description Admin define uma senha inicial ou redefine a de um colaborador.
+         *
+         *     Encerra as sessões abertas do colaborador; a senha não é registrada em lugar algum.
+         */
+        put: operations["definir_senha_api_v1_usuarios__usuario_id__senha_put"];
+        post?: never;
+        /**
+         * Remover Senha
+         * @description Remove a senha local: o colaborador volta a entrar somente com Google.
+         */
+        delete: operations["remover_senha_api_v1_usuarios__usuario_id__senha_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health/live": {
         parameters: {
             query?: never;
@@ -870,6 +942,11 @@ export interface components {
             /** Widgets */
             widgets?: components["schemas"]["WidgetIn"][] | null;
         };
+        /** DefinirSenhaIn */
+        DefinirSenhaIn: {
+            /** Nova Senha */
+            nova_senha: string;
+        };
         /** ErrorBody */
         ErrorBody: {
             /** Code */
@@ -986,6 +1063,21 @@ export interface components {
             /** Valor Conversoes */
             valor_conversoes: string | null;
         };
+        /** LoginSenhaIn */
+        LoginSenhaIn: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /**
+             * Manter Conectado
+             * @default true
+             */
+            manter_conectado: boolean;
+            /** Senha */
+            senha: string;
+        };
         /**
          * MapeamentoConversoes
          * @description Ações do provedor contadas como conversão e janela de atribuição (opcional).
@@ -1008,6 +1100,11 @@ export interface components {
             /** Nome */
             nome: string;
             papel: components["schemas"]["Papel"];
+            /**
+             * Tem Senha
+             * @default false
+             */
+            tem_senha: boolean;
         };
         /** MembroOut */
         MembroOut: {
@@ -1379,6 +1476,13 @@ export interface components {
          * @enum {string}
          */
         TipoJob: "historico" | "incremental" | "manual";
+        /** TrocarSenhaIn */
+        TrocarSenhaIn: {
+            /** Nova Senha */
+            nova_senha: string;
+            /** Senha Atual */
+            senha_atual?: string | null;
+        };
         /** UsuarioCreate */
         UsuarioCreate: {
             /**
@@ -1415,6 +1519,11 @@ export interface components {
             nome: string;
             /** Papel */
             papel: string;
+            /**
+             * Tem Senha
+             * @default false
+             */
+            tem_senha: boolean;
             /** Ultimo Login Em */
             ultimo_login_em: string | null;
             /**
@@ -1715,6 +1824,78 @@ export interface operations {
             };
         };
     };
+    login_senha_api_v1_auth_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginSenhaIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Credenciais inválidas */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description CONFLICT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Limite */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     logout_api_v1_auth_logout_post: {
         parameters: {
             query?: never;
@@ -1804,6 +1985,82 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MeOut"];
                 };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description CONFLICT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description RATE_LIMITED */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    trocar_senha_api_v1_auth_senha_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrocarSenhaIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description UNAUTHENTICATED */
             401: {
@@ -4857,6 +5114,158 @@ export interface operations {
             path: {
                 usuario_id: string;
                 cliente_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description CONFLICT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description RATE_LIMITED */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    definir_senha_api_v1_usuarios__usuario_id__senha_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                usuario_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DefinirSenhaIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description CONFLICT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description RATE_LIMITED */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    remover_senha_api_v1_usuarios__usuario_id__senha_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                usuario_id: string;
             };
             cookie?: never;
         };

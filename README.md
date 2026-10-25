@@ -26,8 +26,9 @@ navegador ──▶ proxy (Caddy, HTTPS) ──┬─ /api/*, /health/* ─▶ a
                                                                                                     └─ PDFs (volume privado)
 ```
 
-- Login Google OIDC (Authorization Code + PKCE, state/nonce) só para usuários pré-cadastrados;
-  sessão de servidor em cookie `HttpOnly`/`Secure`/`SameSite=Lax`, CSRF + Origin em mutações.
+- Login Google OIDC (Authorization Code + PKCE, state/nonce) **ou e-mail e senha** (hash Argon2id,
+  opcional por usuário), sempre só para usuários pré-cadastrados; sessão de servidor em cookie
+  `HttpOnly`/`Secure`/`SameSite=Lax`, CSRF + Origin em mutações, limite de tentativas por IP e por e-mail.
 - Quatro perfis (admin, gestor, analista, visualizador) e escopo por carteira de clientes.
 - Sincronização assíncrona e idempotente (UPSERT, chave por job, retry exponencial, freshness).
 - Relatórios: snapshot dos números no momento da solicitação → PDF A4 gerado no worker →
@@ -60,7 +61,10 @@ curl http://localhost/health/ready        # {"status":"ok",...}
 docker compose run --rm api python -m app.cli criar-admin --email voce@empresa.com --nome "Seu Nome"
 ```
 
-Acesse http://localhost e clique em **Entrar com Google**.
+Acesse http://localhost e clique em **Entrar com Google**. Para entrar com e-mail e senha, defina
+uma senha: `docker compose run --rm api python -m app.cli definir-senha --email voce@empresa.com`
+(pede a senha sem eco). Depois, o admin define/redefine senhas na tela **Usuários** e cada pessoa
+troca a própria em **Configurações**. Não há "esqueci a senha" por e-mail: quem esquece pede ao admin.
 
 | Finalidade | Redirect URI |
 |---|---|
@@ -104,6 +108,7 @@ cd frontend && npm ci && npm run dev      # http://localhost:3000
 | infra | `infra/backup/backup.sh` / `infra/backup/restore.sh <arquivo>` | backup criptografado / restauração |
 | infra | `infra/monitor/verificar.sh` | verificações do host com alerta (cron) |
 | infra | `infra/vps/provisionar.sh` | provisionamento seguro da VPS (uma vez, como root) |
+| backend | `python -m app.cli definir-senha --email ...` | define a senha de login de um usuário |
 | backend | `python -m app.cli rotacionar-chave` / `revogar-sessoes` / `lgpd-exportar` / `lgpd-anonimizar` | operação e incidentes |
 
 Para o CI **bloquear merge**, ative em *Settings → Branches* a proteção da `main` exigindo os
@@ -135,6 +140,8 @@ Ver [docs/runbook.md](docs/runbook.md). Resumo do deploy em VPS: DNS apontado, p
 | API não sobe (`ValidationError`) | variável obrigatória ausente/inválida (`ENCRYPTION_KEY` precisa de 32 bytes base64) |
 | `/health/ready` 503 | banco ou Redis indisponível |
 | Login volta com "acesso negado" | e-mail não cadastrado, usuário inativo ou conta Google diferente da vinculada |
+| "E-mail ou senha inválidos" | senha errada, usuário sem senha definida (só Google) ou inativo — a mensagem é a mesma de propósito |
+| Login por senha responde 429 | muitas tentativas para o IP (`RATE_LIMIT_LOGIN`) ou para o e-mail (`RATE_LIMIT_LOGIN_EMAIL`) |
 | Mutações com 403 CSRF/Origin | `FRONTEND_URL`/`ALLOWED_ORIGINS` diferente da origem real |
 | Conectar provedor → 503 | credenciais do provedor ausentes no `.env` |
 | `migrate` recusa a base | base parcialmente inicializada; ver docs/dados.md |

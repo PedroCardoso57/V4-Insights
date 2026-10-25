@@ -46,6 +46,24 @@ class MeOut(BaseModel):
     nome: str
     email: str
     papel: Papel
+    tem_senha: bool = False
+
+
+class LoginSenhaIn(BaseModel):
+    email: EmailStr
+    senha: str = Field(min_length=1, max_length=128)
+    # False: cookie de sessão do navegador (expira ao fechar); a sessão no servidor
+    # continua limitada a SESSION_TTL_HOURS em ambos os casos.
+    manter_conectado: bool = True
+
+
+class TrocarSenhaIn(BaseModel):
+    senha_atual: str | None = Field(default=None, max_length=128)
+    nova_senha: str = Field(min_length=1, max_length=128)
+
+
+class DefinirSenhaIn(BaseModel):
+    nova_senha: str = Field(min_length=1, max_length=128)
 
 
 class UsuarioOut(ORM):
@@ -55,6 +73,7 @@ class UsuarioOut(ORM):
     papel: str
     ativo: bool
     vinculado_google: bool = False
+    tem_senha: bool = False
     ultimo_login_em: datetime | None
     criado_em: datetime
 

@@ -66,13 +66,13 @@ def por_usuario(nome: str, regra: Callable[[], str]) -> Callable[..., Principal]
     return _dep
 
 
-Tipo = Literal["login", "caro"]
+Tipo = Literal["login", "login_email", "caro"]
 
 
 def regra(tipo: Tipo) -> Callable[[], str]:
     s = get_settings
-    return (
-        (lambda: s().rate_limit_login)
-        if tipo == "login"
-        else (lambda: s().rate_limit_operacoes_caras)
-    )
+    if tipo == "login":
+        return lambda: s().rate_limit_login
+    if tipo == "login_email":
+        return lambda: s().rate_limit_login_email
+    return lambda: s().rate_limit_operacoes_caras

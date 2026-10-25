@@ -36,3 +36,25 @@ def test_multifernet_decifra_chave_antiga() -> None:
     mf = MultiFernet([Fernet(nova), Fernet(antiga)])
     rotacionado = mf.rotate(token)
     assert Fernet(nova).decrypt(rotacionado) == b"segredo"
+
+
+def test_hash_de_senha_argon2id_e_verificacao() -> None:
+    from app.core import senhas
+
+    h = senhas.gerar_hash("Uma-senha-boa-1")
+    assert h.startswith("$argon2id$") and "Uma-senha-boa-1" not in h
+    assert senhas.verificar(h, "Uma-senha-boa-1")
+    assert not senhas.verificar(h, "outra-senha-qualquer")
+    assert not senhas.verificar(None, "Uma-senha-boa-1")  # usuário sem senha nunca autentica
+    assert not senhas.verificar("lixo", "x")
+
+
+def test_politica_de_senha() -> None:
+    import pytest
+
+    from app.core import senhas
+
+    for ruim in ("curta", " " * 12, "a" * 129, "maria.silva"):
+        with pytest.raises(senhas.SenhaFraca):
+            senhas.validar_politica(ruim, "maria.silva@v4.com")
+    senhas.validar_politica("frase longa e boa", "maria.silva@v4.com")

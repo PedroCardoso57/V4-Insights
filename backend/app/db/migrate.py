@@ -3,7 +3,7 @@
     python -m app.db.migrate            # upgrade head
     python -m app.db.migrate --check    # só informa o estado
 
-- Base limpa: `alembic upgrade head` (0001 executa a baseline, 0002 os ajustes).
+- Base limpa: `alembic upgrade head` (0001 executa a baseline, 0002+ os ajustes).
 - Base inicializada manualmente com `001_initial.sql` (sem `alembic_version`): valida que
   TODAS as tabelas e perfis da baseline existem, registra `stamp 0001` sem reaplicar o SQL
   e segue para `head`. Base parcial é recusada para intervenção manual.

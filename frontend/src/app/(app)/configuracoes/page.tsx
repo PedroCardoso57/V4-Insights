@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
+import { SenhaCard } from "@/features/auth/senha-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -106,6 +107,7 @@ export default function ConfiguracoesPage() {
             </div>
           </CardContent>
         </Card>
+        <SenhaCard />
         <Card>
           <CardHeader className="flex-col items-start">
             <CardTitle>Status operacional</CardTitle>

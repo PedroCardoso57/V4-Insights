@@ -86,6 +86,7 @@ docker compose ps                                  # todos healthy
 | Situação | Procedimento |
 |---|---|
 | Colaborador desligado ou conta suspeita | Desativar na tela **Usuários** (revoga sessões) ou `python -m app.cli revogar-sessoes --email ...` |
+| Senha de colaborador vazada ou esquecida | Admin redefine (ou remove) em **Usuários → chave**; isso encerra as sessões dele. Via CLI: `python -m app.cli definir-senha --email ...` |
 | Sessões comprometidas em massa | `python -m app.cli revogar-sessoes --todas` |
 | Token de provedor vazado | **Revogar** a integração na tela (apaga a credencial e revoga no provedor) e reconectar; trocar o client secret no console do provedor |
 | `ENCRYPTION_KEY` exposta | Mover a chave atual para `ENCRYPTION_KEYS_PREVIOUS`, gerar nova `ENCRYPTION_KEY`, reiniciar api/worker, `python -m app.cli rotacionar-chave`, esvaziar `ENCRYPTION_KEYS_PREVIOUS` e reiniciar de novo |
@@ -100,6 +101,7 @@ docker compose ps                                  # todos healthy
 | Integração "requer reconexão" | Token revogado/expirado no provedor: botão **Reconectar** na tela de integrações. |
 | PDF em `erro` | Mensagem segura na execução; gere novamente (mesma `Idempotency-Key` reprocessa o mesmo snapshot). |
 | Login 403 | E-mail não cadastrado, usuário inativo ou `sub` Google diferente do vinculado (admin pode desvincular). |
+| Login por senha 401/429 | 401: credencial inválida, usuário sem senha ou inativo (veja `login_negado` na auditoria com o motivo). 429: limite por IP/e-mail; aguarde a janela. |
 
 ## Checklist de produção
 

@@ -53,6 +53,7 @@ def exportar(db: Session, email: str) -> dict[str, Any]:
                 "perfil": u.papel,
                 "ativo": u.ativo,
                 "vinculado_google": u.google_sub is not None,
+                "tem_senha": u.senha_hash is not None,
                 "criado_em": u.criado_em,
                 "ultimo_login_em": u.ultimo_login_em,
             },
@@ -83,6 +84,7 @@ def anonimizar(db: Session, email: str) -> uuid.UUID:
     u.nome = "Colaborador removido"
     u.email = f"removido+{uid.hex}@anonimizado.invalid"
     u.google_sub = None
+    u.senha_hash = None
     u.ativo = False
     db.execute(
         update(Sessao)
