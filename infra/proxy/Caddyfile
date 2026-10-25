@@ -9,16 +9,27 @@
 		X-Frame-Options "DENY"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Permissions-Policy "camera=(), microphone=(), geolocation=()"
-		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		# Next.js injeta scripts inline de hidratação; demais origens bloqueadas.
+		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com https://www.facebook.com"
 		-Server
 	}
 
-	# API publicada sob /api (prefixo removido antes do upstream).
-	handle_path /api/* {
+	# API versionada (/api/v1) e health checks vão ao FastAPI sem reescrita de caminho.
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+	handle /health/* {
+		reverse_proxy api:8000
+	}
+	# Documentação interativa só existe fora de produção (ENVIRONMENT != production).
+	handle /docs* {
+		reverse_proxy api:8000
+	}
+	handle /openapi.json {
 		reverse_proxy api:8000
 	}
 
 	handle {
-		reverse_proxy frontend:80
+		reverse_proxy frontend:3000
 	}
 }

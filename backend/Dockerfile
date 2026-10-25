@@ -19,8 +19,10 @@ RUN groupadd --system app && useradd --system --gid app --home /app app
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 COPY alembic.ini ./
-COPY migrations ./migrations
+COPY alembic ./alembic
 COPY app ./app
+# Storage privado dos PDFs (montar volume; nunca servido pelo proxy).
+RUN mkdir -p /var/lib/v4insights/relatorios && chown -R app:app /var/lib/v4insights
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=3 \
