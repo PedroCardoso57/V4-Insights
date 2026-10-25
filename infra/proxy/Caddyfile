@@ -1,0 +1,35 @@
+# SITE_ADDRESS=insights.suaempresa.com.br habilita HTTPS automático (Let's Encrypt).
+# Em desenvolvimento, o padrão ":80" serve HTTP puro.
+{$SITE_ADDRESS::80} {
+	encode gzip zstd
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		# Next.js injeta scripts inline de hidratação; demais origens bloqueadas.
+		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com https://www.facebook.com"
+		-Server
+	}
+
+	# API versionada (/api/v1) e health checks vão ao FastAPI sem reescrita de caminho.
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+	handle /health/* {
+		reverse_proxy api:8000
+	}
+	# Documentação interativa só existe fora de produção (ENVIRONMENT != production).
+	handle /docs* {
+		reverse_proxy api:8000
+	}
+	handle /openapi.json {
+		reverse_proxy api:8000
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+}

@@ -1,0 +1,13 @@
+# Sobreposição para homologação (VPS de testes):
+#   docker compose -f docker-compose.yml -f infra/docker/compose.homologacao.yml up -d
+# Mantém produção e homologação isoladas (volumes e projeto distintos).
+name: v4-insights-hml
+
+services:
+  api:
+    environment:
+      ENVIRONMENT: staging
+      LOG_LEVEL: DEBUG
+  worker:
+    environment:
+      ENVIRONMENT: staging
