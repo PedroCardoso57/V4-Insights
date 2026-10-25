@@ -2,6 +2,7 @@
 
 python -m app.cli criar-admin --email pessoa@empresa.com --nome "Nome"
 python -m app.cli openapi --out ../frontend/openapi.json
+python -m app.cli definir-senha --email x@y.com    # pede a senha sem eco (ou --stdin)
 python -m app.cli rotacionar-chave                 # após trocar ENCRYPTION_KEY
 python -m app.cli revogar-sessoes --email x@y.com  # ou --todas
 python -m app.cli lgpd-exportar --email x@y.com --out titular.json
@@ -61,6 +62,48 @@ def exportar_openapi(destino: str) -> int:
         with open(destino, "w", encoding="utf-8") as fh:
             fh.write(conteudo)
     return 0
+
+
+def definir_senha(email: str, ler_stdin: bool) -> int:
+    import getpass
+
+    from app.core import senhas
+    from app.core.sessions import now
+
+    if ler_stdin:
+        senha = sys.stdin.readline().rstrip("\n")
+    else:
+        senha = getpass.getpass("Nova senha: ")
+        if senha != getpass.getpass("Repita a senha: "):
+            print("as senhas não conferem", file=sys.stderr)
+            return 2
+    db = get_sessionmaker()()
+    try:
+        email = normalize_email(email)
+        u = db.scalar(select(Usuario).where(func.lower(Usuario.email) == email))
+        if u is None:
+            print("usuário não encontrado", file=sys.stderr)
+            return 1
+        try:
+            senhas.validar_politica(senha, u.email)
+        except senhas.SenhaFraca as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        u.senha_hash = senhas.gerar_hash(senha)
+        u.senha_atualizada_em = now()
+        registrar(
+            db,
+            usuario_id=None,
+            acao="definir_senha",
+            entidade="usuario",
+            entidade_id=u.id,
+            dados={"origem": "cli"},
+        )
+        db.commit()
+        print(f"senha definida para {email}")
+        return 0
+    finally:
+        db.close()
 
 
 def rotacionar_chave() -> int:
@@ -166,6 +209,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--nome", required=True)
     o = sub.add_parser("openapi", help="exporta o schema OpenAPI (fonte do cliente TypeScript)")
     o.add_argument("--out", default="-", help="arquivo de saída ('-' = stdout)")
+    ds = sub.add_parser("definir-senha", help="define a senha de login de um usuário")
+    ds.add_argument("--email", required=True)
+    ds.add_argument("--stdin", action="store_true", help="lê a senha da entrada padrão")
     sub.add_parser("rotacionar-chave", help="recifra credenciais com a ENCRYPTION_KEY atual")
     rv = sub.add_parser("revogar-sessoes", help="encerra sessões ativas")
     rv.add_argument("--email")
@@ -177,6 +223,8 @@ def main(argv: list[str] | None = None) -> int:
     la.add_argument("--email", required=True)
     la.add_argument("--confirmar", action="store_true")
     args = parser.parse_args(argv)
+    if args.cmd == "definir-senha":
+        return definir_senha(args.email, args.stdin)
     if args.cmd == "rotacionar-chave":
         return rotacionar_chave()
     if args.cmd == "revogar-sessoes":

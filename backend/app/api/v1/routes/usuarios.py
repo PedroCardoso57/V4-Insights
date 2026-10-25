@@ -7,12 +7,14 @@ from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.api.deps import GERENCIA, Principal, get_principal, require_roles
+from app.api.errors import AppError
 from app.api.rbac import exigir, get_cliente_autorizado, in_carteira
+from app.core import senhas
 from app.core.oidc import normalize_email
 from app.core.sessions import now
 from app.db.session import get_db
 from app.models import Papel, Sessao, Usuario, UsuarioCliente
-from app.schemas import Page, UsuarioCreate, UsuarioOut, UsuarioUpdate
+from app.schemas import DefinirSenhaIn, Page, UsuarioCreate, UsuarioOut, UsuarioUpdate
 from app.services.audit import registrar
 from app.services.perfis import perfil_id
 
@@ -22,6 +24,7 @@ router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 def _out(u: Usuario) -> UsuarioOut:
     out = UsuarioOut.model_validate(u)
     out.vinculado_google = u.google_sub is not None
+    out.tem_senha = u.senha_hash is not None
     return out
 
 
@@ -136,6 +139,68 @@ def atualizar(
     db.commit()
     db.refresh(u)
     return _out(u)
+
+
+@router.put("/{usuario_id}/senha", status_code=204)
+def definir_senha(
+    usuario_id: uuid.UUID,
+    body: DefinirSenhaIn,
+    request: Request,
+    principal: Principal = Depends(require_roles(Papel.admin)),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Admin define uma senha inicial ou redefine a de um colaborador.
+
+    Encerra as sessões abertas do colaborador; a senha não é registrada em lugar algum.
+    """
+    u = _get_usuario(db, usuario_id)
+    try:
+        senhas.validar_politica(body.nova_senha, u.email)
+    except senhas.SenhaFraca as exc:
+        raise AppError(422, str(exc), code="WEAK_PASSWORD") from exc
+    redefinida = u.senha_hash is not None
+    u.senha_hash = senhas.gerar_hash(body.nova_senha)
+    u.senha_atualizada_em = now()
+    if u.id != principal.usuario.id:
+        db.execute(
+            update(Sessao)
+            .where(Sessao.usuario_id == u.id, Sessao.revogado_em.is_(None))
+            .values(revogado_em=now())
+        )
+    registrar(
+        db,
+        usuario_id=principal.usuario.id,
+        acao="redefinir_senha" if redefinida else "definir_senha",
+        entidade="usuario",
+        entidade_id=u.id,
+        request=request,
+    )
+    db.commit()
+    return Response(status_code=204)
+
+
+@router.delete("/{usuario_id}/senha", status_code=204)
+def remover_senha(
+    usuario_id: uuid.UUID,
+    request: Request,
+    principal: Principal = Depends(require_roles(Papel.admin)),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Remove a senha local: o colaborador volta a entrar somente com Google."""
+    u = _get_usuario(db, usuario_id)
+    if u.senha_hash is not None:
+        u.senha_hash = None
+        u.senha_atualizada_em = now()
+        registrar(
+            db,
+            usuario_id=principal.usuario.id,
+            acao="remover_senha",
+            entidade="usuario",
+            entidade_id=u.id,
+            request=request,
+        )
+        db.commit()
+    return Response(status_code=204)
 
 
 def _checar_atribuicao(db: Session, principal: Principal, cliente_id: uuid.UUID) -> None:

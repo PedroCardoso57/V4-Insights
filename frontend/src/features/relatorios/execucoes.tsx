@@ -17,9 +17,9 @@ export function Execucoes({ relatorioId }: { relatorioId: string }) {
   const q = useExecucoes(relatorioId);
   return (
     <Card>
-      <CardHeader><CardTitle>Execuções</CardTitle></CardHeader>
-      <CardContent>
-        <Consulta query={q} vazio={(d) => d.items.length === 0 && <Vazio titulo="Nenhum PDF gerado ainda">Use “Gerar PDF” após salvar a configuração.</Vazio>}>
+      <CardHeader className="border-b"><CardTitle>Execuções</CardTitle></CardHeader>
+      <CardContent className="p-0">
+        <Consulta query={q} vazio={(d) => d.items.length === 0 && <div className="p-5"><Vazio titulo="Nenhum PDF gerado ainda">Use “Gerar PDF” após salvar a configuração.</Vazio></div>}>
           {(d) => (
             <Table>
               <TableHeader>
@@ -37,11 +37,11 @@ export function Execucoes({ relatorioId }: { relatorioId: string }) {
                   const url = urlDownload(e);
                   return (
                     <TableRow key={e.id}>
-                      <TableCell>{fmtDataHora(e.iniciado_em)}</TableCell>
+                      <TableCell className="font-mono-num text-xs">{fmtDataHora(e.iniciado_em)}</TableCell>
                       <TableCell>{snap.periodo ? `${fmtData(snap.periodo.inicio)} – ${fmtData(snap.periodo.fim)}` : "—"}</TableCell>
                       <TableCell>{fmtDataHora(snap.horario_corte)}</TableCell>
                       <TableCell>
-                        <Badge variant={TOM[e.status]}>{e.status === "processando" ? `processando ${e.progresso}%` : e.status}</Badge>
+                        <Badge ponto variant={TOM[e.status]}>{e.status === "processando" ? `processando ${e.progresso}%` : e.status}</Badge>
                         {e.erro && <p className="mt-1 max-w-64 text-xs text-destructive">{e.erro}</p>}
                         {e.status === "concluido" && !url && <p className="mt-1 text-xs text-muted-foreground">arquivo expirado (retenção)</p>}
                       </TableCell>

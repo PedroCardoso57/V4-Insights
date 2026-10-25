@@ -14,7 +14,7 @@ function SelectTrigger({ className, children, ...props }: React.ComponentProps<t
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       className={cn(
-        "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs whitespace-nowrap data-[placeholder]:text-muted-foreground disabled:opacity-50 [&>span]:truncate",
+        "flex h-9 w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-input bg-card px-3 py-2 text-[13px] font-medium shadow-xs whitespace-nowrap data-[placeholder]:text-muted-foreground disabled:opacity-50 [&>span]:truncate",
         className,
       )}
       {...props}
@@ -32,7 +32,7 @@ function SelectContent({ className, children, position = "popper", ...props }: R
       <SelectPrimitive.Content
         position={position}
         className={cn(
-          "relative z-50 max-h-72 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md",
+          "relative z-50 max-h-72 min-w-[8rem] overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-lg",
           position === "popper" && "w-full min-w-[var(--radix-select-trigger-width)] translate-y-1",
           className,
         )}
@@ -47,7 +47,7 @@ function SelectItem({ className, children, ...props }: React.ComponentProps<type
   return (
     <SelectPrimitive.Item
       className={cn(
-        "relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent data-[disabled]:opacity-50",
+        "relative flex w-full cursor-default items-center gap-2 rounded-md py-1.5 pr-8 pl-2 text-[13px] outline-hidden select-none focus:bg-subtle data-[disabled]:opacity-50",
         className,
       )}
       {...props}

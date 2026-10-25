@@ -12,6 +12,21 @@ test.describe("login", () => {
     await expect(page.getByRole("link", { name: "Entrar com Google" })).toHaveAttribute("href", "/api/v1/auth/google/login");
   });
 
+  test("e-mail e senha: valida, recusa credencial errada e entra com a correta", async ({ page }) => {
+    await instalarApi(page, novoEstado(null));
+    await page.goto("/login");
+    await page.getByRole("button", { name: "Entrar na plataforma" }).click();
+    await expect(page.getByText(/Informe um e-mail corporativo válido/)).toBeVisible();
+    await page.getByLabel("E-mail corporativo").fill("ana@v4.com");
+    await page.getByLabel("Senha de acesso").fill("errada");
+    await page.getByRole("button", { name: "Entrar na plataforma" }).click();
+    await expect(page.getByText("E-mail ou senha inválidos.")).toBeVisible();
+    await page.getByLabel("Senha de acesso").fill("senha-correta-123");
+    await page.getByRole("button", { name: "Entrar na plataforma" }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole("heading", { name: "Visão geral da carteira" })).toBeVisible();
+  });
+
   test("acesso negado exibe motivo", async ({ page }) => {
     await instalarApi(page, novoEstado(null));
     await page.goto("/login?erro=acesso_negado");

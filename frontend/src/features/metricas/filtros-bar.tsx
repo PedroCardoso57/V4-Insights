@@ -27,20 +27,20 @@ export function FiltrosBar({
     .filter((i) => !filtros.plataforma || i.plataforma === filtros.plataforma)
     .flatMap((i) => i.contas.map((c) => ({ ...c, plataforma: i.plataforma })));
   return (
-    <fieldset className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-3" aria-label="Filtros">
+    <fieldset className="flex flex-wrap items-end gap-3 rounded-xl border bg-card p-4 shadow-xs" aria-label="Filtros">
       <legend className="sr-only">Filtros</legend>
       <div className="grid gap-1">
-        <Label htmlFor="f-inicio" className="text-xs text-muted-foreground">De</Label>
+        <Label htmlFor="f-inicio" className="text-[11px] text-muted-foreground">De</Label>
         <Input id="f-inicio" type="date" className="w-40" value={filtros.inicio} max={filtros.fim}
           onChange={(e) => e.target.value && set({ inicio: e.target.value })} />
       </div>
       <div className="grid gap-1">
-        <Label htmlFor="f-fim" className="text-xs text-muted-foreground">Até</Label>
+        <Label htmlFor="f-fim" className="text-[11px] text-muted-foreground">Até</Label>
         <Input id="f-fim" type="date" className="w-40" value={filtros.fim} min={filtros.inicio}
           onChange={(e) => e.target.value && set({ fim: e.target.value })} />
       </div>
       <div className="grid gap-1">
-        <Label className="text-xs text-muted-foreground" id="f-plat">Plataforma</Label>
+        <Label className="text-[11px] text-muted-foreground" id="f-plat">Plataforma</Label>
         <Select value={filtros.plataforma || TODAS}
           onValueChange={(v) => set({ plataforma: v === TODAS ? "" : (v as Plataforma), conta_anuncio_id: "", campanha_id: "" })}>
           <SelectTrigger className="w-40" aria-labelledby="f-plat"><SelectValue /></SelectTrigger>
@@ -53,7 +53,7 @@ export function FiltrosBar({
       </div>
       {contas.length > 0 && (
         <div className="grid gap-1">
-          <Label className="text-xs text-muted-foreground" id="f-conta">Conta</Label>
+          <Label className="text-[11px] text-muted-foreground" id="f-conta">Conta</Label>
           <Select value={filtros.conta_anuncio_id || TODAS}
             onValueChange={(v) => set({ conta_anuncio_id: v === TODAS ? "" : v, campanha_id: "" })}>
             <SelectTrigger className="w-52" aria-labelledby="f-conta"><SelectValue /></SelectTrigger>
@@ -68,7 +68,7 @@ export function FiltrosBar({
       )}
       {campanhas.length > 0 && (
         <div className="grid gap-1">
-          <Label className="text-xs text-muted-foreground" id="f-camp">Campanha</Label>
+          <Label className="text-[11px] text-muted-foreground" id="f-camp">Campanha</Label>
           <Select value={filtros.campanha_id || TODAS} onValueChange={(v) => set({ campanha_id: v === TODAS ? "" : v })}>
             <SelectTrigger className="w-56" aria-labelledby="f-camp"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -81,7 +81,7 @@ export function FiltrosBar({
         </div>
       )}
       <div className="grid gap-1">
-        <Label className="text-xs text-muted-foreground" id="f-gran">Granularidade</Label>
+        <Label className="text-[11px] text-muted-foreground" id="f-gran">Granularidade</Label>
         <Select value={filtros.granularidade} onValueChange={(v) => set({ granularidade: v as Granularidade })}>
           <SelectTrigger className="w-32" aria-labelledby="f-gran"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -91,7 +91,7 @@ export function FiltrosBar({
           </SelectContent>
         </Select>
       </div>
-      <Label className="h-9 text-sm font-normal">
+      <Label className="h-9 text-xs font-normal text-text-secondary">
         <Checkbox checked={filtros.comparar} onCheckedChange={(v) => set({ comparar: v === true })} />
         Comparar com período anterior
       </Label>

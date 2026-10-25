@@ -68,6 +68,14 @@ export async function instalarApi(page: Page, st: Estado) {
       return json(route, { id: "u1", nome: "Ana Lima", email: "ana@v4.com", papel: st.papel });
     }
     if (p === "/auth/logout") return route.fulfill({ status: 204 });
+    if (p === "/auth/login" && m === "POST") {
+      // Credencial fixa do ambiente simulado; o backend real compara o hash Argon2id.
+      if (body.email !== "ana@v4.com" || body.senha !== "senha-correta-123") {
+        return erro(route, 401, "INVALID_CREDENTIALS", "E-mail ou senha inválidos.");
+      }
+      st.papel = "admin";
+      return route.fulfill({ status: 204 });
+    }
     if (st.papel === null) return erro(route, 401, "UNAUTHENTICATED", "Sessão inválida");
 
     // clientes

@@ -58,7 +58,7 @@ def test_base_limpa_aplica_uma_unica_vez(url_mig: str) -> None:
     assert {"perfis", "sessoes", "sync_jobs", "credenciais_integracao", "relatorios"} <= tabelas
     assert migrate.migrar(url_mig) == "versionada"  # repetir não duplica nada
     assert _sql(url_mig, "SELECT count(*) FROM perfis") == [(4,)]
-    assert _sql(url_mig, "SELECT version_num FROM alembic_version") == [("0002",)]
+    assert _sql(url_mig, "SELECT version_num FROM alembic_version") == [("0003",)]
 
 
 def test_base_inicializada_pela_baseline_preserva_dados(url_mig: str) -> None:

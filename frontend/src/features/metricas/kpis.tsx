@@ -18,20 +18,26 @@ export function KpiCard({ resumo, kpi }: { resumo: Resumo; kpi: KpiKey }) {
   const n = v === null || v === undefined ? null : Number(v);
   const bom = n === null || n === 0 ? null : KPI_CUSTO.includes(kpi) ? n < 0 : n > 0;
   return (
-    <Card className="flex flex-col gap-1 p-4">
-      <span className="text-xs text-muted-foreground">{KPI_LABEL[kpi]}</span>
-      <strong className="text-xl tabular-nums">{fmtKpi(kpi, resumo.atual[kpi], moeda)}</strong>
+    <Card className="flex flex-col p-4">
+      <span className="flex items-center justify-between gap-2 text-xs font-medium text-muted-foreground">
+        {KPI_LABEL[kpi]}
+        <InfoIcon className="size-3.5 text-faint" aria-hidden />
+      </span>
+      <strong className="mt-2.5 mb-3 font-mono-num text-xl font-semibold text-foreground">{fmtKpi(kpi, resumo.atual[kpi], moeda)}</strong>
       {resumo.periodo_anterior && (
         <span
-          className={cn("inline-flex items-center gap-1 text-xs text-muted-foreground", bom === true && "text-success", bom === false && "text-destructive")}
+          className="mt-auto inline-flex items-center gap-1 border-t pt-2.5 text-[11px] text-muted-foreground"
           title={`vs ${fmtData(resumo.periodo_anterior.inicio)} – ${fmtData(resumo.periodo_anterior.fim)}`}
         >
           {n === null ? (
             "sem base de comparação"
           ) : (
             <>
-              {n > 0 ? <ArrowUpRightIcon className="size-3" aria-hidden /> : n < 0 ? <ArrowDownRightIcon className="size-3" aria-hidden /> : null}
-              {`${n > 0 ? "+" : ""}${fmtPercent(v)}`}
+              <span className={cn("inline-flex items-center gap-0.5 font-mono-num font-semibold", bom === true && "text-success", bom === false && "text-destructive")}>
+                {n > 0 ? <ArrowUpRightIcon className="size-3" aria-hidden /> : n < 0 ? <ArrowDownRightIcon className="size-3" aria-hidden /> : null}
+                {`${n > 0 ? "+" : ""}${fmtPercent(v)}`}
+              </span>
+              <span className="truncate">vs. período anterior</span>
               <span className="sr-only">{bom ? "(favorável)" : bom === false ? "(desfavorável)" : ""}</span>
             </>
           )}
@@ -43,7 +49,7 @@ export function KpiCard({ resumo, kpi }: { resumo: Resumo; kpi: KpiKey }) {
 
 export function KpiGrid({ resumo, kpis = KPIS_PADRAO }: { resumo: Resumo; kpis?: KpiKey[] }) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-9">
       {kpis.map((k) => (
         <KpiCard key={k} resumo={resumo} kpi={k} />
       ))}

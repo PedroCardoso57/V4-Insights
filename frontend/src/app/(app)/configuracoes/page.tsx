@@ -1,11 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2Icon, XCircleIcon } from "lucide-react";
+import { CheckCircle2Icon, MoonIcon, SunIcon, XCircleIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
+import { SenhaCard } from "@/features/auth/senha-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,6 +16,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useMe } from "@/hooks/use-me";
 import { PAPEL_LABEL } from "@/lib/format";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useTema } from "@/hooks/use-tema";
+import { cn } from "@/lib/utils";
 import { parsePreferencias, PREFERENCIAS_KEY, type Preferencias } from "@/lib/preferencias";
 import { API_BASE } from "@/services/api/client";
 
@@ -25,6 +28,7 @@ interface Ready {
 
 export default function ConfiguracoesPage() {
   const me = useMe().data;
+  const [tema, setTema] = useTema();
   const [salvo, salvar] = useLocalStorage(PREFERENCIAS_KEY);
   const [rascunho, setPref] = useState<Preferencias | null>(null);
   const pref = rascunho ?? parsePreferencias(salvo);
@@ -37,7 +41,35 @@ export default function ConfiguracoesPage() {
   return (
     <>
       <PageHeader titulo="Configurações" descricao="Preferências deste navegador e status operacional da plataforma." />
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex-col items-start">
+            <CardTitle>Aparência</CardTitle>
+            <CardDescription>Tema da interface neste navegador.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div role="radiogroup" aria-label="Tema" className="grid max-w-md grid-cols-2 gap-3">
+              {([
+                { id: "claro", label: "Claro", icon: SunIcon },
+                { id: "escuro", label: "Escuro", icon: MoonIcon },
+              ] as const).map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="radio"
+                  aria-checked={tema === id}
+                  onClick={() => setTema(id)}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2.5 rounded-xl border p-3 text-left text-[13px] font-medium transition-colors hover:bg-subtle",
+                    tema === id && "border-primary bg-primary-soft text-primary hover:bg-primary-soft",
+                  )}
+                >
+                  <Icon className="size-4" aria-hidden /> {label}
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="flex-col items-start">
             <CardTitle>Preferências</CardTitle>
@@ -75,6 +107,7 @@ export default function ConfiguracoesPage() {
             </div>
           </CardContent>
         </Card>
+        <SenhaCard />
         <Card>
           <CardHeader className="flex-col items-start">
             <CardTitle>Status operacional</CardTitle>
@@ -82,7 +115,7 @@ export default function ConfiguracoesPage() {
           </CardHeader>
           <CardContent className="grid gap-3 text-sm">
             {saude.isPending ? (
-              <Skeleton className="h-16" />
+              <Skeleton className="h-16 rounded-xl" />
             ) : saude.isError || !saude.data ? (
               <p className="flex items-center gap-2 text-destructive"><XCircleIcon className="size-4" /> API indisponível</p>
             ) : (

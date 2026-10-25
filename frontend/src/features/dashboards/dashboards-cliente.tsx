@@ -180,14 +180,14 @@ function DashboardView({ dashboard, editavel, onExcluido }: { dashboard: Dashboa
               {w.tipo === "kpi" && (resumo.data ? <KpiCard resumo={resumo.data} kpi={kpi} /> : <Skeleton className="h-24" />)}
               {w.tipo === "serie" && (
                 <Card>
-                  <CardHeader><CardTitle>{w.titulo}</CardTitle></CardHeader>
-                  <CardContent>{serie.data ? <SerieChart serie={serie.data} kpi={kpi} moeda={moeda} /> : <Skeleton className="h-72" />}</CardContent>
+                  <CardHeader className="border-b"><CardTitle>{w.titulo}</CardTitle></CardHeader>
+                  <CardContent className="pt-4">{serie.data ? <SerieChart serie={serie.data} kpi={kpi} moeda={moeda} /> : <Skeleton className="h-72" />}</CardContent>
                 </Card>
               )}
               {w.tipo === "tabela_campanhas" && (
                 <Card>
-                  <CardHeader><CardTitle>{w.titulo}</CardTitle></CardHeader>
-                  <CardContent>{campanhas.data ? <CampanhasTable campanhas={campanhas.data.items} moeda={moeda} /> : <Skeleton className="h-40" />}</CardContent>
+                  <CardHeader className="border-b"><CardTitle>{w.titulo}</CardTitle></CardHeader>
+                  <CardContent className="p-0">{campanhas.data ? <CampanhasTable campanhas={campanhas.data.items} moeda={moeda} /> : <Skeleton className="h-40" />}</CardContent>
                 </Card>
               )}
             </div>

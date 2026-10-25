@@ -133,6 +133,9 @@ class Usuario(Base):
     criado_em: Mapped[datetime] = _ts()
     atualizado_em: Mapped[datetime] = _ts(onupdate=func.now())
     ultimo_login_em: Mapped[datetime | None] = _ts(nullable=True)
+    # Login por e-mail e senha (opcional): somente o hash Argon2id é guardado.
+    senha_hash: Mapped[str | None] = mapped_column(String(255))
+    senha_atualizada_em: Mapped[datetime | None] = _ts(nullable=True)
 
     perfil: Mapped[Perfil] = relationship(lazy="joined")
 

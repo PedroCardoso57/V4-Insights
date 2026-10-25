@@ -27,13 +27,21 @@ export function mensagemDeErro(e: unknown): string {
 export function ErroEstado({ erro, onRetry }: { erro: unknown; onRetry?: () => void }) {
   const rid = erro instanceof ApiError ? erro.requestId : undefined;
   return (
-    <div role="alert" className="flex flex-col items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm">
-      <div className="flex items-center gap-2 font-medium text-destructive">
-        <AlertTriangleIcon className="size-4" /> {mensagemDeErro(erro)}
+    <div
+      role="alert"
+      className="flex flex-col items-center justify-center gap-1 rounded-xl border border-destructive/30 bg-card px-6 py-8 text-center"
+    >
+      <div className="mb-2.5 flex size-11 items-center justify-center rounded-xl bg-destructive-soft text-destructive">
+        <AlertTriangleIcon className="size-5" aria-hidden />
       </div>
-      {rid && <p className="text-xs text-muted-foreground">Código de correlação: <code>{rid}</code></p>}
+      <p className="text-sm font-semibold">{mensagemDeErro(erro)}</p>
+      {rid && (
+        <p className="text-xs text-muted-foreground">
+          Código de correlação: <code className="font-mono-num">{rid}</code>
+        </p>
+      )}
       {onRetry && (
-        <Button variant="outline" size="sm" onClick={onRetry}>
+        <Button variant="outline" size="sm" onClick={onRetry} className="mt-3">
           <RotateCwIcon /> Tentar novamente
         </Button>
       )}
@@ -43,11 +51,13 @@ export function ErroEstado({ erro, onRetry }: { erro: unknown; onRetry?: () => v
 
 export function Vazio({ titulo, children, acao }: { titulo: string; children?: ReactNode; acao?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed bg-card px-6 py-10 text-center">
-      <InboxIcon className="size-8 text-muted-foreground" aria-hidden />
-      <p className="font-medium">{titulo}</p>
-      {children && <div className="max-w-md text-sm text-muted-foreground">{children}</div>}
-      {acao && <div className="mt-2">{acao}</div>}
+    <div className="flex min-h-56 flex-col items-center justify-center gap-1 rounded-xl border bg-card px-6 py-10 text-center">
+      <div className="mb-2.5 flex size-11 items-center justify-center rounded-xl border bg-subtle text-muted-foreground">
+        <InboxIcon className="size-5" aria-hidden />
+      </div>
+      <p className="text-sm font-semibold">{titulo}</p>
+      {children && <div className="max-w-md text-xs leading-relaxed text-muted-foreground">{children}</div>}
+      {acao && <div className="mt-3">{acao}</div>}
     </div>
   );
 }

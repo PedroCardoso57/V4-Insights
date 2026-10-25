@@ -175,7 +175,7 @@ export function EditorRelatorio({
                 </div>
               )}
               <fieldset className="grid gap-2">
-                <legend className="mb-1 text-sm font-medium">Fontes</legend>
+                <legend className="mb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">Fontes</legend>
                 <Controller control={control} name="plataformas" render={({ field }) => (
                   <div className="flex flex-wrap gap-4">
                     {(["meta_ads", "google_ads"] as const).map((p) => (
@@ -189,7 +189,7 @@ export function EditorRelatorio({
                 <p className="text-xs text-muted-foreground">Nenhuma marcada = todas as fontes conectadas.</p>
               </fieldset>
               <fieldset className="grid gap-2">
-                <legend className="mb-1 text-sm font-medium">KPIs</legend>
+                <legend className="mb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">KPIs</legend>
                 <Controller control={control} name="kpis" render={({ field }) => (
                   <div className="grid grid-cols-2 gap-2">
                     {KPIS.map((k) => (
@@ -203,7 +203,7 @@ export function EditorRelatorio({
                 {formState.errors.kpis && <p role="alert" className="text-xs text-destructive">{formState.errors.kpis.message}</p>}
               </fieldset>
               <fieldset className="grid gap-2">
-                <legend className="mb-1 text-sm font-medium">Gráficos e tabelas</legend>
+                <legend className="mb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">Gráficos e tabelas</legend>
                 <Controller control={control} name="graficos" render={({ field }) => (
                   <div className="grid gap-2">
                     {GRAFICOS.map((g) => (

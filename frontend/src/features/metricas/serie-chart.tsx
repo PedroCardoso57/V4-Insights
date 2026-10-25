@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { fmtData, fmtKpi, KPI_LABEL, type KpiKey } from "@/lib/format";
 import type { Schemas } from "@/services/api/client";
+
+const EIXO = { fontSize: 10, fontFamily: "JetBrains Mono Variable, ui-monospace, monospace", fill: "var(--faint)" };
 
 export function SerieChart({ serie, kpi, moeda = "BRL" }: { serie: Schemas["SerieOut"]; kpi: KpiKey; moeda?: string }) {
   const dados = useMemo(
@@ -23,17 +25,59 @@ export function SerieChart({ serie, kpi, moeda = "BRL" }: { serie: Schemas["Seri
   return (
     <figure aria-label={`Série temporal de ${KPI_LABEL[kpi]}`} className="h-72 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={dados} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-          <XAxis dataKey="periodo" fontSize={12} tickMargin={6} />
-          <YAxis fontSize={12} width={64} tickFormatter={(v: number) => fmtKpi(kpi, v, moeda).replace(/,\d+/, "")} />
-          <Tooltip formatter={(v) => fmtKpi(kpi, v as number, moeda)} />
-          <Legend />
-          <Line name={KPI_LABEL[kpi]} dataKey="atual" stroke="var(--chart-1)" strokeWidth={2} dot={false} connectNulls />
+        <AreaChart data={dados} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="grad-serie" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--brand)" stopOpacity={0.2} />
+              <stop offset="100%" stopColor="var(--brand)" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 4" stroke="var(--line)" vertical={false} />
+          <XAxis dataKey="periodo" tick={EIXO} tickMargin={8} axisLine={false} tickLine={false} />
+          <YAxis
+            tick={EIXO}
+            width={72}
+            axisLine={false}
+            tickLine={false}
+            tickFormatter={(v: number) => fmtKpi(kpi, v, moeda).replace(/,\d+/, "")}
+          />
+          <Tooltip
+            formatter={(v) => fmtKpi(kpi, v as number, moeda)}
+            contentStyle={{
+              background: "#14161a",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 10,
+              color: "#fff",
+              fontSize: 12,
+            }}
+            labelStyle={{ color: "rgba(255,255,255,0.7)" }}
+            cursor={{ stroke: "var(--line-strong)" }}
+          />
+          <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: "var(--text-muted)" }} />
+          <Area
+            name={KPI_LABEL[kpi]}
+            dataKey="atual"
+            type="monotone"
+            stroke="var(--brand)"
+            strokeWidth={2}
+            fill="url(#grad-serie)"
+            dot={{ r: 3, fill: "var(--surface)", stroke: "var(--brand)", strokeWidth: 1.5 }}
+            activeDot={{ r: 4 }}
+            connectNulls
+          />
           {serie.comparacao && (
-            <Line name="Período anterior" dataKey="anterior" stroke="var(--chart-2)" strokeDasharray="4 4" dot={false} connectNulls />
+            <Line
+              name="Período anterior"
+              dataKey="anterior"
+              type="monotone"
+              stroke="var(--blue)"
+              strokeWidth={1.5}
+              strokeDasharray="4 4"
+              dot={false}
+              connectNulls
+            />
           )}
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
     </figure>
   );

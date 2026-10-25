@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Consulta, Vazio } from "@/components/estado";
+import { Inicial } from "@/components/inicial";
 import { PageHeader } from "@/components/page-header";
 import { Paginacao } from "@/components/paginacao";
 import { Badge } from "@/components/ui/badge";
@@ -43,20 +44,23 @@ export default function ClientesPage() {
   return (
     <>
       <PageHeader
-        titulo="Clientes"
-        descricao="Somente clientes da sua carteira aparecem aqui."
+        titulo="Carteira de clientes"
+        descricao="Acompanhe as contas da sua carteira, responsáveis e integrações. Somente clientes atribuídos a você aparecem aqui."
         acoes={pode.gerirClientes(papel) && <Button onClick={() => setCriando(true)}><PlusIcon /> Novo cliente</Button>}
       />
       <form
-        className="mb-4 flex flex-wrap gap-2"
+        className="mb-5 flex flex-wrap items-center gap-2 rounded-xl border bg-card p-4 shadow-xs"
         role="search"
         onSubmit={(e) => {
           e.preventDefault();
           setF({ ...f, page: 1, search: texto.trim() || undefined });
         }}
       >
-        <Input type="search" aria-label="Buscar por nome" placeholder="Buscar por nome" maxLength={100} value={texto}
-          onChange={(e) => setTexto(e.target.value)} className="w-64" />
+        <div className="relative w-full sm:w-72">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-faint" aria-hidden />
+          <Input type="search" aria-label="Buscar por nome" placeholder="Buscar por nome" maxLength={100} value={texto}
+            onChange={(e) => setTexto(e.target.value)} className="pl-8" />
+        </div>
         <Select value={f.status ?? "todos"} onValueChange={(v) => setF({ ...f, page: 1, status: v === "todos" ? undefined : (v as FiltroClientes["status"]) })}>
           <SelectTrigger className="w-40" aria-label="Status"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -66,6 +70,11 @@ export default function ClientesPage() {
           </SelectContent>
         </Select>
         <Button type="submit" variant="outline"><SearchIcon /> Buscar</Button>
+        {q.data && (
+          <span className="ml-auto font-mono-num text-xs text-muted-foreground">
+            {q.data.items.length} de {q.data.total} {q.data.total === 1 ? "cliente" : "clientes"}
+          </span>
+        )}
       </form>
       <Consulta
         query={q}
@@ -82,6 +91,7 @@ export default function ClientesPage() {
       >
         {(d) => (
           <>
+            <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -94,14 +104,20 @@ export default function ClientesPage() {
               <TableBody>
                 {d.items.map((c) => (
                   <TableRow key={c.id}>
-                    <TableCell><Link className="font-medium hover:underline" href={`/clientes/${c.id}`}>{c.nome}</Link></TableCell>
-                    <TableCell>{c.nome_fantasia ?? "—"}</TableCell>
-                    <TableCell><Badge variant={c.status === "ativo" ? "success" : "secondary"}>{c.status}</Badge></TableCell>
-                    <TableCell>{fmtData(c.criado_em)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Inicial nome={c.nome} />
+                        <Link className="font-semibold hover:underline" href={`/clientes/${c.id}`}>{c.nome}</Link>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-text-secondary">{c.nome_fantasia ?? "—"}</TableCell>
+                    <TableCell><Badge ponto variant={c.status === "ativo" ? "success" : "secondary"}>{c.status}</Badge></TableCell>
+                    <TableCell className="font-mono-num text-xs text-muted-foreground">{fmtData(c.criado_em)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+            </div>
             <Paginacao page={d.page} pageSize={d.page_size} total={d.total} onPage={(p) => setF({ ...f, page: p })} />
           </>
         )}
