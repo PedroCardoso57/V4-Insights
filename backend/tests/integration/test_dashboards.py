@@ -34,7 +34,7 @@ def test_crud_de_dashboard_e_widgets(factory) -> None:
     body = r.json()
     assert body["nome"] == "Renomeado"
     assert [x["tipo"] for x in body["widgets"]] == ["serie", "tabela_campanhas"]
-    assert [d["id"] for d in cli.get(f"/dashboards?cliente_id={c.id}").json()] == [did]
+    assert [d["id"] for d in cli.get(f"/dashboards?cliente_id={c.id}").json()["items"]] == [did]
     assert cli.delete(f"/dashboards/{did}").status_code == 204
     assert cli.get(f"/dashboards/{did}").status_code == 404
 
@@ -65,5 +65,5 @@ def test_dashboard_de_outra_carteira(factory) -> None:
     )
     outro = factory.login(factory.usuario("analista"))
     assert outro.get(f"/dashboards/{did}").status_code == 404
-    assert outro.get("/dashboards").json() == []
+    assert outro.get("/dashboards").json()["items"] == []
     assert outro.post("/dashboards", json={"cliente_id": str(c.id), "nome": "X"}).status_code == 404

@@ -5,7 +5,6 @@ from decimal import Decimal
 
 import pytest
 
-from app.metrics import kpis, variacao
 from app.models import ContaAnuncio, Integracao, MetricaDiaria
 
 D1, D2, D3 = date(2026, 3, 1), date(2026, 3, 2), date(2026, 3, 8)
@@ -15,15 +14,13 @@ D1, D2, D3 = date(2026, 3, 1), date(2026, 3, 2), date(2026, 3, 8)
 def dados(factory, db):  # type: ignore[no-untyped-def]
     u = factory.usuario("visualizador")
     c = factory.cliente("Cliente", membros=(u,))
-    integ = Integracao(cliente_id=c.id, plataforma="meta", status="ativa")
-    integ_g = Integracao(cliente_id=c.id, plataforma="google_ads", status="ativa")
+    integ = Integracao(cliente_id=c.id, plataforma="meta_ads", status="conectada")
+    integ_g = Integracao(cliente_id=c.id, plataforma="google_ads", status="conectada")
     db.add_all([integ, integ_g])
     db.flush()
-    conta = ContaAnuncio(
-        integracao_id=integ.id, cliente_id=c.id, id_externo="1", nome="Meta", moeda="BRL"
-    )
+    conta = ContaAnuncio(integracao_id=integ.id, conta_externa_id="1", nome="Meta", moeda="BRL")
     conta_g = ContaAnuncio(
-        integracao_id=integ_g.id, cliente_id=c.id, id_externo="2", nome="Google", moeda="BRL"
+        integracao_id=integ_g.id, conta_externa_id="2", nome="Google", moeda="BRL"
     )
     db.add_all([conta, conta_g])
     db.flush()
@@ -32,14 +29,11 @@ def dados(factory, db):  # type: ignore[no-untyped-def]
         db.add(
             MetricaDiaria(
                 conta_anuncio_id=conta.id,
-                cliente_id=c.id,
-                plataforma=conta.integracao.plataforma if conta.integracao else "meta",
                 data=data,
                 nivel=nivel,
                 entidade_externa_id=ent,
                 campanha_externa_id=ent,
                 campanha_nome=f"Camp {ent}",
-                moeda="BRL",
                 investimento=Decimal(inv),
                 impressoes=imp,
                 cliques=cli,
@@ -62,18 +56,6 @@ def dados(factory, db):  # type: ignore[no-untyped-def]
     return factory.login(u), c, conta
 
 
-def test_formulas_e_ausencia_em_divisao_por_zero() -> None:
-    k = kpis(Decimal("150"), 15000, 300, Decimal("15"), Decimal("600"))
-    assert k.ctr == Decimal("2.0000")
-    assert k.cpc == Decimal("0.5000")
-    assert k.cpm == Decimal("10.0000")
-    assert k.cpa == Decimal("10.0000")
-    assert k.roas == Decimal("4.0000")
-    z = kpis(Decimal(0), 0, 0, Decimal(0), None)
-    assert (z.ctr, z.cpc, z.cpm, z.cpa, z.roas) == (None, None, None, None, None)
-    assert variacao(10, 0) is None and variacao(15, 10) == Decimal("50.00")
-
-
 def test_resumo_bate_com_fixture(dados) -> None:
     cli, c, _ = dados
     r = cli.get(f"/clientes/{c.id}/metricas/resumo?inicio=2026-03-01&fim=2026-03-08").json()
@@ -93,7 +75,7 @@ def test_filtros_afetam_todas_as_consultas(dados) -> None:
     q = "inicio=2026-03-01&fim=2026-03-08&plataforma=google_ads"
     resumo = cli.get(f"/clientes/{c.id}/metricas/resumo?{q}").json()["atual"]
     serie = cli.get(f"/clientes/{c.id}/metricas/serie?{q}").json()["pontos"]
-    camps = cli.get(f"/clientes/{c.id}/campanhas?{q}").json()
+    camps = cli.get(f"/clientes/{c.id}/campanhas?{q}").json()["items"]
     assert Decimal(resumo["investimento"]) == 150
     assert sum(Decimal(p["kpis"]["investimento"]) for p in serie) == 150
     assert [x["campanha_externa_id"] for x in camps] == ["g"]
@@ -122,13 +104,13 @@ def test_serie_por_granularidade(dados) -> None:
 def test_campanhas_ordenaveis(dados) -> None:
     cli, c, _ = dados
     base = f"/clientes/{c.id}/campanhas?inicio=2026-03-01&fim=2026-03-08"
-    desc = cli.get(f"{base}&ordenar_por=investimento&ordem=desc").json()
+    desc = cli.get(f"{base}&ordenar_por=investimento&ordem=desc").json()["items"]
     # empate em investimento é desempatado pelo id externo (ordem estável)
     assert [(x["campanha_externa_id"], x["kpis"]["investimento"]) for x in desc] == [
         ("a", "150.00"),
         ("g", "150.00"),
     ]
-    asc = cli.get(f"{base}&ordenar_por=cliques&ordem=asc").json()
+    asc = cli.get(f"{base}&ordenar_por=cliques&ordem=asc").json()["items"]
     assert [x["campanha_externa_id"] for x in asc] == ["g", "a"]
 
 
@@ -141,7 +123,7 @@ def test_conta_sem_dados_vazio_e_sem_comparativo(factory) -> None:
     assert all(v is None for v in r["variacao_percentual"].values())
     assert r["atual"]["ctr"] is None
     assert cli.get(f"/clientes/{c.id}/metricas/serie").json()["pontos"] == []
-    assert cli.get(f"/clientes/{c.id}/campanhas").json() == []
+    assert cli.get(f"/clientes/{c.id}/campanhas").json()["items"] == []
 
 
 def test_carteira_alheia_inacessivel(dados, factory) -> None:

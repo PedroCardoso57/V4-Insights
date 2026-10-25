@@ -7,13 +7,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
-from app.core.audit import registrar
-from app.core.deps import GERENCIA, Principal, get_principal, require_roles
-from app.core.rbac import get_cliente_autorizado, scope_clientes
+from app.api.deps import GERENCIA, Principal, get_principal, require_roles
+from app.api.rbac import get_cliente_autorizado, scope_clientes
 from app.core.sessions import now
-from app.db import get_db
+from app.db.session import get_db
 from app.models import Cliente, Papel, StatusCliente, Usuario, UsuarioCliente
 from app.schemas import ClienteCreate, ClienteOut, ClienteUpdate, MembroOut, Page
+from app.services.audit import registrar
 
 router = APIRouter(prefix="/clientes", tags=["clientes"])
 
@@ -158,12 +158,12 @@ def arquivar(
     return ClienteOut.model_validate(c)
 
 
-@router.get("/{cliente_id}/usuarios", response_model=list[MembroOut])
+@router.get("/{cliente_id}/usuarios", response_model=Page[MembroOut])
 def membros(
     cliente_id: uuid.UUID,
     principal: Principal = Depends(get_principal),
     db: Session = Depends(get_db),
-) -> list[MembroOut]:
+) -> Page[MembroOut]:
     get_cliente_autorizado(db, principal, cliente_id)
     rows = db.execute(
         select(Usuario, UsuarioCliente.criado_em)
@@ -171,9 +171,16 @@ def membros(
         .where(UsuarioCliente.cliente_id == cliente_id)
         .order_by(Usuario.nome)
     ).all()
-    return [
-        MembroOut(
-            id=u.id, nome=u.nome, email=u.email, papel=u.papel, ativo=u.ativo, atribuido_em=criado
-        )
-        for u, criado in rows
-    ]
+    return Page.unica(
+        [
+            MembroOut(
+                id=u.id,
+                nome=u.nome,
+                email=u.email,
+                papel=u.papel,
+                ativo=u.ativo,
+                atribuido_em=criado,
+            )
+            for u, criado in rows
+        ]
+    )

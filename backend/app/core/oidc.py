@@ -12,7 +12,7 @@ from urllib.parse import urlencode
 import httpx
 import jwt
 
-from app.config import get_settings
+from app.core.config import get_settings
 
 
 class OIDCError(Exception):
@@ -32,7 +32,7 @@ def pkce_challenge(verifier: str) -> str:
 
 
 def login_redirect_uri() -> str:
-    return f"{get_settings().api_base_url.rstrip('/')}/auth/google/callback"
+    return f"{get_settings().api_v1_url}/auth/google/callback"
 
 
 def build_authorize_url(state: str, nonce: str, code_verifier: str) -> str:

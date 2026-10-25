@@ -6,14 +6,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response,
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 
-from app.core.audit import registrar
-from app.core.deps import GERENCIA, Principal, get_principal, require_roles
+from app.api.deps import GERENCIA, Principal, get_principal, require_roles
+from app.api.rbac import exigir, get_cliente_autorizado, in_carteira
 from app.core.oidc import normalize_email
-from app.core.rbac import exigir, get_cliente_autorizado, in_carteira
 from app.core.sessions import now
-from app.db import get_db
+from app.db.session import get_db
 from app.models import Papel, Sessao, Usuario, UsuarioCliente
 from app.schemas import Page, UsuarioCreate, UsuarioOut, UsuarioUpdate
+from app.services.audit import registrar
+from app.services.perfis import perfil_id
 
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 
@@ -29,14 +30,16 @@ def listar(
     search: str | None = Query(default=None, max_length=100),
     ativo: bool | None = None,
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=50, ge=1, le=200),
+    page_size: int = Query(default=50, ge=1, le=100),
     principal: Principal = Depends(require_roles(*GERENCIA)),
     db: Session = Depends(get_db),
 ) -> Page[UsuarioOut]:
     stmt = select(Usuario)
     if search:
         like = f"%{search.strip().lower()}%"
-        stmt = stmt.where(or_(func.lower(Usuario.nome).like(like), Usuario.email.like(like)))
+        stmt = stmt.where(
+            or_(func.lower(Usuario.nome).like(like), func.lower(Usuario.email).like(like))
+        )
     if ativo is not None:
         stmt = stmt.where(Usuario.ativo.is_(ativo))
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
@@ -54,9 +57,9 @@ def criar(
     db: Session = Depends(get_db),
 ) -> UsuarioOut:
     email = normalize_email(body.email)
-    if db.scalar(select(Usuario.id).where(Usuario.email == email)):
+    if db.scalar(select(Usuario.id).where(func.lower(Usuario.email) == email)):
         raise HTTPException(status.HTTP_409_CONFLICT, "E-mail já cadastrado")
-    u = Usuario(nome=body.nome, email=email, papel=body.papel.value, ativo=body.ativo)
+    u = Usuario(nome=body.nome, email=email, perfil_id=perfil_id(db, body.papel), ativo=body.ativo)
     db.add(u)
     db.flush()
     registrar(
@@ -69,6 +72,7 @@ def criar(
         request=request,
     )
     db.commit()
+    db.refresh(u)
     return _out(u)
 
 
@@ -108,7 +112,7 @@ def atualizar(
     if body.nome is not None:
         u.nome = body.nome.strip()
     if body.papel is not None:
-        u.papel = body.papel.value
+        u.perfil_id = perfil_id(db, body.papel)
     if body.ativo is not None:
         u.ativo = body.ativo
     if body.desvincular_google:
@@ -117,8 +121,8 @@ def atualizar(
         # Mudanças de acesso invalidam sessões abertas.
         db.execute(
             update(Sessao)
-            .where(Sessao.usuario_id == u.id, Sessao.revogada_em.is_(None))
-            .values(revogada_em=now())
+            .where(Sessao.usuario_id == u.id, Sessao.revogado_em.is_(None))
+            .values(revogado_em=now())
         )
     registrar(
         db,
@@ -130,6 +134,7 @@ def atualizar(
         request=request,
     )
     db.commit()
+    db.refresh(u)
     return _out(u)
 
 

@@ -6,9 +6,9 @@ from dataclasses import dataclass
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
+from app.core.config import get_settings
 from app.core.sessions import SAFE_METHODS, csrf_valid, find_active_session, origin_allowed
-from app.db import get_db
+from app.db.session import get_db
 from app.models import Papel, Sessao, Usuario
 
 

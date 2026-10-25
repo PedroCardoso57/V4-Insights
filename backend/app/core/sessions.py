@@ -8,9 +8,10 @@ from datetime import UTC, datetime, timedelta
 from urllib.parse import urlsplit
 
 from fastapi import Request, Response
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
+from app.core.config import get_settings
 from app.core.crypto import random_token, sha256_hex
 from app.models import Sessao
 
@@ -21,22 +22,24 @@ def now() -> datetime:
     return datetime.now(UTC)
 
 
-def create_session(db: Session, usuario_id: uuid.UUID, request: Request) -> tuple[str, Sessao]:
+def create_session(db: Session, usuario_id: uuid.UUID, request: Request) -> tuple[str, str, Sessao]:
+    """Cria a sessão e devolve (token, csrf_token, sessao). Só os hashes são persistidos."""
     settings = get_settings()
     token = random_token(32)
+    csrf = random_token(24)
     sessao = Sessao(
-        id=sha256_hex(token),
+        token_hash=sha256_hex(token),
+        csrf_hash=sha256_hex(csrf),
         usuario_id=usuario_id,
-        csrf_token=random_token(24),
         expira_em=now() + timedelta(hours=settings.session_ttl_hours),
         ip=client_ip(request),
         user_agent=(request.headers.get("user-agent") or "")[:400],
     )
     db.add(sessao)
-    return token, sessao
+    return token, csrf, sessao
 
 
-def set_session_cookies(response: Response, token: str, sessao: Sessao) -> None:
+def set_session_cookies(response: Response, token: str, csrf: str) -> None:
     settings = get_settings()
     max_age = settings.session_ttl_hours * 3600
     response.set_cookie(
@@ -51,7 +54,7 @@ def set_session_cookies(response: Response, token: str, sessao: Sessao) -> None:
     # Cookie legível pelo frontend para o padrão double-submit (não é credencial).
     response.set_cookie(
         settings.csrf_cookie_name,
-        sessao.csrf_token,
+        csrf,
         max_age=max_age,
         httponly=False,
         secure=settings.cookie_secure,
@@ -69,9 +72,14 @@ def clear_session_cookies(response: Response) -> None:
 def find_active_session(db: Session, token: str | None) -> Sessao | None:
     if not token:
         return None
-    sessao = db.get(Sessao, sha256_hex(token))
-    if sessao is None or sessao.revogada_em is not None or sessao.expira_em <= now():
+    sessao = db.scalar(select(Sessao).where(Sessao.token_hash == sha256_hex(token)))
+    if sessao is None or sessao.revogado_em is not None or sessao.expira_em <= now():
         return None
+    # Atualiza o último acesso no máximo a cada 5 minutos (evita escrita a cada request).
+    agora = now()
+    if sessao.ultimo_acesso_em is None or agora - sessao.ultimo_acesso_em > timedelta(minutes=5):
+        sessao.ultimo_acesso_em = agora
+        db.commit()
     return sessao
 
 
@@ -89,7 +97,7 @@ def origin_allowed(request: Request) -> bool:
 
 def csrf_valid(request: Request, sessao: Sessao) -> bool:
     header = request.headers.get("x-csrf-token", "")
-    return bool(header) and hmac.compare_digest(header, sessao.csrf_token)
+    return bool(header) and hmac.compare_digest(sha256_hex(header), sessao.csrf_hash)
 
 
 def client_ip(request: Request) -> str | None:

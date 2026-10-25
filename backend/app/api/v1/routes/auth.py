@@ -2,21 +2,22 @@ from __future__ import annotations
 
 import logging
 from datetime import timedelta
+from html import escape
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from fastapi.responses import RedirectResponse
-from sqlalchemy import select
+from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
+from app.api.deps import Principal, get_principal
 from app.core import oidc
-from app.core.audit import registrar
+from app.core.config import get_settings
 from app.core.crypto import random_token, sha256_hex
-from app.core.deps import Principal, get_principal
 from app.core.sessions import clear_session_cookies, create_session, now, set_session_cookies
-from app.db import get_db
+from app.db.session import get_db
 from app.models import OAuthState, Usuario
 from app.schemas import MeOut
+from app.services.audit import registrar
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 log = logging.getLogger(__name__)
@@ -65,21 +66,24 @@ def google_callback(
     db: Session = Depends(get_db),
 ) -> Response:
     settings = get_settings()
-    st = _consume_state(db, state, "login")
+    try:
+        st = _consume_state(db, state, "login")
+    except HTTPException:
+        return _negar(400, "state_invalido")
     db.commit()  # state é de uso único mesmo quando o login falha
     if error or not code:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "autorização não concedida")
+        return _negar(400, "autorizacao_cancelada")
     try:
         tokens = oidc.exchange_code(code, st.code_verifier or "")
         ident = oidc.verify_id_token(tokens["id_token"], st.nonce or "")
     except oidc.OIDCError as exc:
         log.warning("login recusado: %s", exc)
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token de identidade inválido") from exc
+        return _negar(401, "token_invalido")
 
     usuario = db.scalar(select(Usuario).where(Usuario.google_sub == ident.sub))
     if usuario is None:
         # Primeiro login: vincula pelo e-mail somente se ainda não houver `sub` salvo.
-        usuario = db.scalar(select(Usuario).where(Usuario.email == ident.email))
+        usuario = db.scalar(select(Usuario).where(func.lower(Usuario.email) == ident.email))
         if usuario is not None and usuario.google_sub is not None:
             registrar(
                 db,
@@ -91,9 +95,9 @@ def google_callback(
                 request=request,
             )
             db.commit()
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "Conta não autorizada")
+            return _negar(403, "acesso_negado")
     if usuario is None:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Conta não autorizada")
+        return _negar(403, "acesso_negado")
     if not usuario.ativo:
         registrar(
             db,
@@ -105,12 +109,12 @@ def google_callback(
             request=request,
         )
         db.commit()
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Conta não autorizada")
+        return _negar(403, "acesso_negado")
 
     if usuario.google_sub is None:
         usuario.google_sub = ident.sub
     usuario.ultimo_login_em = now()
-    token, sessao = create_session(db, usuario.id, request)
+    token, csrf, _ = create_session(db, usuario.id, request)
     registrar(
         db,
         usuario_id=usuario.id,
@@ -122,16 +126,29 @@ def google_callback(
     db.commit()
 
     response = RedirectResponse(settings.frontend_url, status_code=302)
-    set_session_cookies(response, token, sessao)
+    set_session_cookies(response, token, csrf)
     return response
+
+
+def _negar(status_code: int, codigo: str) -> HTMLResponse:
+    """Recusa o login com o status correto e leva o navegador à tela de login com o motivo.
+
+    O status HTTP (400/401/403) é preservado para clientes de API; navegadores seguem o
+    meta refresh até `/login?erro=<codigo>`.
+    """
+    destino = f"{get_settings().frontend_url.rstrip('/')}/login?erro={codigo}"
+    html = (
+        "<!doctype html><meta charset='utf-8'>"
+        f"<meta http-equiv='refresh' content='0;url={escape(destino)}'>"
+        f"<title>Acesso não autorizado</title><a href='{escape(destino)}'>Voltar ao login</a>"
+    )
+    return HTMLResponse(html, status_code=status_code)
 
 
 @router.get("/me", response_model=MeOut)
 def me(principal: Principal = Depends(get_principal)) -> MeOut:
     u = principal.usuario
-    return MeOut(
-        id=u.id, nome=u.nome, email=u.email, papel=u.papel, csrf_token=principal.sessao.csrf_token
-    )
+    return MeOut(id=u.id, nome=u.nome, email=u.email, papel=u.papel)
 
 
 @router.post("/logout", status_code=204)
@@ -141,7 +158,7 @@ def logout(
     db: Session = Depends(get_db),
 ) -> Response:
     sessao = db.merge(principal.sessao)
-    sessao.revogada_em = now()
+    sessao.revogado_em = now()
     registrar(
         db,
         usuario_id=principal.usuario.id,

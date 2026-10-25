@@ -9,7 +9,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
-from app.core.deps import Principal
+from app.api.deps import Principal
 from app.models import Cliente, Papel, UsuarioCliente
 
 

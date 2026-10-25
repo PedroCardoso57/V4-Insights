@@ -6,8 +6,8 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from app.db import get_engine
-from app.sync.queue import get_redis
+from app.db.session import get_engine
+from app.workers.queue import get_redis
 
 router = APIRouter(prefix="/health", tags=["health"])
 log = logging.getLogger(__name__)

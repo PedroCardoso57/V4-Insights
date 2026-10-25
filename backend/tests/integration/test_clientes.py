@@ -13,7 +13,7 @@ def test_crud_busca_e_normalizacao(factory) -> None:
     assert c["nome"] == "Padaria Sol" and c["documento"] == "12345678000190"
     assert admin.post("/clientes", json={"nome": "X", "documento": "123"}).status_code == 422
     assert admin.post("/clientes", json={"nome": "   "}).status_code == 422
-    assert admin.post("/clientes", json={"nome": "a" * 161}).status_code == 422
+    assert admin.post("/clientes", json={"nome": "a" * 181}).status_code == 422
     r = admin.patch(f"/clientes/{c['id']}", json={"nome_fantasia": "Sol"})
     assert r.status_code == 200 and r.json()["nome_fantasia"] == "Sol"
     assert admin.patch(f"/clientes/{c['id']}", json={"nome": None}).status_code == 422
@@ -69,7 +69,7 @@ def test_permissoes_de_gestao(factory, db) -> None:
     cid = r.json()["id"]
     # gestor que cria entra automaticamente na carteira
     assert db.get(UsuarioCliente, (gestor_u.id, r.json()["id"])) is not None
-    assert g.get(f"/clientes/{cid}/usuarios").json()[0]["id"] == str(gestor_u.id)
+    assert g.get(f"/clientes/{cid}/usuarios").json()["items"][0]["id"] == str(gestor_u.id)
     for papel in ("analista", "visualizador"):
         u = factory.usuario(papel)
         c = factory.cliente(membros=(u,))

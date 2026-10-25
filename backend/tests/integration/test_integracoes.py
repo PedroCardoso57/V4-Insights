@@ -9,27 +9,27 @@ from sqlalchemy import func, select
 
 from app.integrations import registry
 from app.integrations.base import PermissionProviderError, RetryableProviderError
-from app.models import ContaAnuncio, Integracao, MetricaDiaria, Segredo, SyncJob
-from app.sync import service
-from tests.fakes import TOKEN_SECRETO, FakeProvider
+from app.models import ContaAnuncio, CredencialIntegracao, Integracao, MetricaDiaria, SyncJob
+from app.services import sync as service
+from tests.integration.fakes import TOKEN_SECRETO, FakeProvider
 
 
 @pytest.fixture
 def fake():  # type: ignore[no-untyped-def]
     p = FakeProvider()
-    registry.override_provider("meta", lambda: p)
+    registry.override_provider("meta_ads", lambda: p)
     yield p
-    registry.override_provider("meta", None)
+    registry.override_provider("meta_ads", None)
 
 
 def _conectar(cli, cliente_id, integracao_id=None) -> str:  # type: ignore[no-untyped-def]
     body = {"cliente_id": str(cliente_id)}
     if integracao_id:
         body["integracao_id"] = str(integracao_id)
-    r = cli.post("/integracoes/meta/autorizar", json=body)
+    r = cli.post("/integracoes/meta_ads/autorizar", json=body)
     assert r.status_code == 200, r.text
     state = parse_qs(urlsplit(r.json()["authorization_url"]).query)["state"][0]
-    r = cli.get(f"/integracoes/meta/callback?state={state}&code=xyz", follow_redirects=False)
+    r = cli.get(f"/integracoes/meta_ads/callback?state={state}&code=xyz", follow_redirects=False)
     assert r.status_code == 302, r.text
     return parse_qs(urlsplit(r.headers["location"]).query)["integracao"][0]
 
@@ -57,10 +57,10 @@ def test_conexao_lista_contas_e_token_criptografado(cenario, db) -> None:
     assert integ.status == "pendente"
     assert integ.referencia_credencial.startswith("secret:")
     assert TOKEN_SECRETO not in integ.referencia_credencial
-    cipher = db.scalar(select(Segredo.ciphertext))
+    cipher = db.scalar(select(CredencialIntegracao.ciphertext))
     assert TOKEN_SECRETO.encode() not in cipher
     r = cli.get(f"/integracoes/{iid}/contas")
-    assert [x["id_externo"] for x in r.json()] == ["111", "222"]
+    assert [x["conta_externa_id"] for x in r.json()["items"]] == ["111", "222"]
     lista = cli.get(f"/integracoes?cliente_id={c.id}").json()
     assert TOKEN_SECRETO not in str(lista)
 
@@ -72,7 +72,7 @@ def test_selecao_de_contas_dispara_carga_historica(cenario, enfileirados, db) ->
         json={
             "contas": [
                 {
-                    "id_externo": "111",
+                    "conta_externa_id": "111",
                     "carga_historica_dias": 5,
                     "mapeamento_conversoes": {"action_types": ["purchase"]},
                 }
@@ -80,9 +80,11 @@ def test_selecao_de_contas_dispara_carga_historica(cenario, enfileirados, db) ->
         },
     )
     assert r.status_code == 200, r.text
-    assert r.json()["status"] == "ativa"
+    assert r.json()["status"] == "conectada"
     assert (
-        cli.post(f"/integracoes/{iid}/contas", json={"contas": [{"id_externo": "999"}]}).status_code
+        cli.post(
+            f"/integracoes/{iid}/contas", json={"contas": [{"conta_externa_id": "999"}]}
+        ).status_code
         == 400
     )
     assert _executar(enfileirados) == ["sucesso"]
@@ -97,16 +99,16 @@ def test_sync_duplicado_nao_duplica_linhas(cenario, enfileirados, db) -> None:
     cli, _, iid = cenario
     cli.post(
         f"/integracoes/{iid}/contas",
-        json={"contas": [{"id_externo": "111", "carga_historica_dias": 3}]},
+        json={"contas": [{"conta_externa_id": "111", "carga_historica_dias": 3}]},
     )
     _executar(enfileirados)
     body = {
-        "data_inicio": (date.today() - timedelta(days=3)).isoformat(),
-        "data_fim": date.today().isoformat(),
+        "periodo_inicio": (date.today() - timedelta(days=3)).isoformat(),
+        "periodo_fim": date.today().isoformat(),
     }
     j1 = cli.post(f"/integracoes/{iid}/sincronizar", json=body).json()
     j2 = cli.post(f"/integracoes/{iid}/sincronizar", json=body).json()
-    assert j1[0]["id"] == j2[0]["id"]  # chave idempotente
+    assert j1["job_id"] == j2["job_id"]  # chave idempotente
     assert len(enfileirados) == 1
     _executar(enfileirados)
     antes = db.scalar(select(func.count()).select_from(MetricaDiaria))
@@ -114,7 +116,6 @@ def test_sync_duplicado_nao_duplica_linhas(cenario, enfileirados, db) -> None:
     service.upsert_metricas(
         db,
         db.scalar(select(ContaAnuncio)),
-        "meta",
         list(FakeProvider().fetch_metrics({}, "111", "campanha", date.today(), date.today(), {})),
     )
     db.commit()
@@ -128,13 +129,13 @@ def test_quota_tem_retry_controlado(cenario, fake, enfileirados, db) -> None:
     fake.erros = [RetryableProviderError("HTTP 429 rate limit", retry_after=7)]
     cli.post(
         f"/integracoes/{iid}/contas",
-        json={"contas": [{"id_externo": "111", "carga_historica_dias": 1}]},
+        json={"contas": [{"conta_externa_id": "111", "carga_historica_dias": 1}]},
     )
     job_id, _ = enfileirados.pop(0)
     assert service.run_job(job_id) == "pendente"
     assert enfileirados == [(job_id, 7)]
     job = db.get(SyncJob, job_id)
-    assert job.tentativas == 1 and "429" in job.erro
+    assert job.tentativa == 1 and "429" in job.erro_sanitizado
     enfileirados.clear()
     assert service.run_job(job_id) == "sucesso"
 
@@ -144,7 +145,7 @@ def test_retry_tem_limite(cenario, fake, enfileirados, db) -> None:
     fake.erros = [RetryableProviderError("HTTP 503") for _ in range(10)]
     cli.post(
         f"/integracoes/{iid}/contas",
-        json={"contas": [{"id_externo": "111", "carga_historica_dias": 1}]},
+        json={"contas": [{"conta_externa_id": "111", "carga_historica_dias": 1}]},
     )
     job_id, _ = enfileirados[0]
     status = None
@@ -154,7 +155,7 @@ def test_retry_tem_limite(cenario, fake, enfileirados, db) -> None:
         if status == "erro":
             break
     assert status == "erro"
-    assert db.get(SyncJob, job_id).tentativas == 5
+    assert db.get(SyncJob, job_id).tentativa == 5
 
 
 def test_erro_de_permissao_nao_repete(cenario, fake, enfileirados, db) -> None:
@@ -162,21 +163,21 @@ def test_erro_de_permissao_nao_repete(cenario, fake, enfileirados, db) -> None:
     fake.erros = [PermissionProviderError(f"HTTP 403 token {TOKEN_SECRETO} inválido")]
     cli.post(
         f"/integracoes/{iid}/contas",
-        json={"contas": [{"id_externo": "111", "carga_historica_dias": 1}]},
+        json={"contas": [{"conta_externa_id": "111", "carga_historica_dias": 1}]},
     )
     job_id, _ = enfileirados.pop(0)
     assert service.run_job(job_id) == "erro"
     assert enfileirados == []
     db.expire_all()
     assert db.get(Integracao, iid).status == "erro"
-    assert TOKEN_SECRETO not in db.get(SyncJob, job_id).erro  # erro sanitizado
+    assert TOKEN_SECRETO not in db.get(SyncJob, job_id).erro_sanitizado  # erro sanitizado
 
 
 def test_revogacao_bloqueia_novas_coletas(cenario, fake, enfileirados, db) -> None:
     cli, _, iid = cenario
     cli.post(
         f"/integracoes/{iid}/contas",
-        json={"contas": [{"id_externo": "111", "carga_historica_dias": 1}]},
+        json={"contas": [{"conta_externa_id": "111", "carga_historica_dias": 1}]},
     )
     pendente, _ = enfileirados.pop(0)
     r = cli.post(f"/integracoes/{iid}/revogar")
@@ -185,7 +186,7 @@ def test_revogacao_bloqueia_novas_coletas(cenario, fake, enfileirados, db) -> No
     assert service.run_job(pendente) == "cancelado"
     assert fake.chamadas == 0
     assert cli.post(f"/integracoes/{iid}/sincronizar").status_code == 409
-    assert db.scalar(select(func.count()).select_from(Segredo)) == 0
+    assert db.scalar(select(func.count()).select_from(CredencialIntegracao)) == 0
     service.agendar_incrementais(db)
     assert enfileirados == []
 
@@ -194,7 +195,7 @@ def test_revogacao_durante_coleta_interrompe(cenario, fake, enfileirados, db) ->
     cli, _, iid = cenario
     cli.post(
         f"/integracoes/{iid}/contas",
-        json={"contas": [{"id_externo": "111", "carga_historica_dias": 900}]},
+        json={"contas": [{"conta_externa_id": "111", "carga_historica_dias": 900}]},
     )
     job_id, _ = enfileirados.pop(0)
     chamadas = {"n": 0}
@@ -211,28 +212,28 @@ def test_revogacao_durante_coleta_interrompe(cenario, fake, enfileirados, db) ->
 
 def test_pausar_e_retomar(cenario, enfileirados, db) -> None:
     cli, _, iid = cenario
-    cli.post(f"/integracoes/{iid}/contas", json={"contas": [{"id_externo": "111"}]})
+    cli.post(f"/integracoes/{iid}/contas", json={"contas": [{"conta_externa_id": "111"}]})
     job_id, _ = enfileirados.pop(0)
     assert cli.post(f"/integracoes/{iid}/pausar").json()["status"] == "pausada"
     assert service.run_job(job_id) == "cancelado"
-    assert cli.post(f"/integracoes/{iid}/retomar").json()["status"] == "ativa"
+    assert cli.post(f"/integracoes/{iid}/retomar").json()["status"] == "conectada"
 
 
 def test_reconectar_mantem_contas(cenario, enfileirados) -> None:
     cli, c, iid = cenario
-    cli.post(f"/integracoes/{iid}/contas", json={"contas": [{"id_externo": "111"}]})
+    cli.post(f"/integracoes/{iid}/contas", json={"contas": [{"conta_externa_id": "111"}]})
     cli.post(f"/integracoes/{iid}/revogar")
     novo = _conectar(cli, c.id, iid)
     assert novo == iid
-    integ = cli.get(f"/integracoes?cliente_id={c.id}").json()[0]
-    assert integ["status"] == "ativa" and len(integ["contas"]) == 1
+    integ = cli.get(f"/integracoes?cliente_id={c.id}").json()["items"][0]
+    assert integ["status"] == "conectada" and len(integ["contas"]) == 1
 
 
 def test_agendador_incremental(cenario, enfileirados, db) -> None:
     cli, _, iid = cenario
     cli.post(
         f"/integracoes/{iid}/contas",
-        json={"contas": [{"id_externo": "111", "carga_historica_dias": 2}]},
+        json={"contas": [{"conta_externa_id": "111", "carga_historica_dias": 2}]},
     )
     assert service.agendar_incrementais(db) == 0  # já existe job em aberto
     _executar(enfileirados)
@@ -248,22 +249,22 @@ def test_callback_exige_state_do_mesmo_usuario(factory, fake, enfileirados) -> N
     u1, u2 = factory.usuario("analista"), factory.usuario("analista")
     c = factory.cliente(membros=(u1, u2))
     a, b = factory.login(u1), factory.login(u2)
-    url = a.post("/integracoes/meta/autorizar", json={"cliente_id": str(c.id)}).json()
+    url = a.post("/integracoes/meta_ads/autorizar", json={"cliente_id": str(c.id)}).json()
     state = parse_qs(urlsplit(url["authorization_url"]).query)["state"][0]
-    assert b.get(f"/integracoes/meta/callback?state={state}&code=x").status_code == 400
+    assert b.get(f"/integracoes/meta_ads/callback?state={state}&code=x").status_code == 400
 
 
 def test_cliente_arquivado_nao_aceita_integracao(factory, fake) -> None:
     u = factory.usuario("analista")
     c = factory.cliente(membros=(u,), status="arquivado")
-    r = factory.login(u).post("/integracoes/meta/autorizar", json={"cliente_id": str(c.id)})
+    r = factory.login(u).post("/integracoes/meta_ads/autorizar", json={"cliente_id": str(c.id)})
     assert r.status_code == 409
 
 
 def test_isolamento_e_permissoes(cenario, factory) -> None:
     _, _, iid = cenario
     outro = factory.login(factory.usuario("analista"))
-    assert outro.get("/integracoes").json() == []
+    assert outro.get("/integracoes").json()["items"] == []
     assert outro.get(f"/integracoes/{iid}/jobs").status_code == 404
     assert outro.post(f"/integracoes/{iid}/revogar").status_code == 404
     vis = factory.usuario("visualizador")
@@ -272,7 +273,7 @@ def test_isolamento_e_permissoes(cenario, factory) -> None:
 
 def test_logs_nao_expoem_segredos(cenario, fake, enfileirados, caplog) -> None:
     cli, _, iid = cenario
-    from app.logging_config import SanitizingFilter
+    from app.core.logging import SanitizingFilter
 
     caplog.handler.addFilter(SanitizingFilter())
     with caplog.at_level(logging.DEBUG):
@@ -280,7 +281,7 @@ def test_logs_nao_expoem_segredos(cenario, fake, enfileirados, caplog) -> None:
         fake.erros = [PermissionProviderError(f"Bearer {TOKEN_SECRETO}")]
         cli.post(
             f"/integracoes/{iid}/contas",
-            json={"contas": [{"id_externo": "111", "carga_historica_dias": 1}]},
+            json={"contas": [{"conta_externa_id": "111", "carga_historica_dias": 1}]},
         )
         _executar(enfileirados)
     assert TOKEN_SECRETO not in caplog.text

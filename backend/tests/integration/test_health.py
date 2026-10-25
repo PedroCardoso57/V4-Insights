@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from sqlalchemy import create_engine
 
-from app.routers import health
+from app.api import health
 
 
 def test_live(anon) -> None:

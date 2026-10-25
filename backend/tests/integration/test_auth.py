@@ -154,8 +154,8 @@ def test_logout_invalida_sessao_no_servidor(factory, db) -> None:
     assert c.get("/auth/me").status_code == 200
     assert c.post("/auth/logout").status_code == 204
     db.expire_all()
-    assert db.scalar(select(Sessao).where(Sessao.usuario_id == u.id)).revogada_em is not None
-    token = db.scalar(select(Sessao).where(Sessao.usuario_id == u.id)).id
+    assert db.scalar(select(Sessao).where(Sessao.usuario_id == u.id)).revogado_em is not None
+    token = db.scalar(select(Sessao).where(Sessao.usuario_id == u.id)).token_hash
     assert token  # só o hash é persistido
     c.cookies.set("v4_session", c.cookies.get("v4_session") or "x")
     assert c.get("/auth/me").status_code == 401
