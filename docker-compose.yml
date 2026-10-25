@@ -1,6 +1,13 @@
 name: v4-insights
 
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
 x-backend: &backend
+  logging: *logging
   build:
     context: ./backend
   image: v4-insights-api:${APP_VERSION:-local}
@@ -14,6 +21,12 @@ x-backend: &backend
 
 services:
   postgres:
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1g
     image: postgres:16.4-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -31,6 +44,12 @@ services:
     # Sem "ports": banco não é exposto fora da rede interna.
 
   redis:
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256m
     image: redis:7.4-alpine
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
@@ -53,6 +72,11 @@ services:
         condition: service_healthy
 
   api:
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768m
     <<: *backend
     volumes:
       - relatorios:/var/lib/v4insights/relatorios
@@ -69,9 +93,14 @@ services:
       retries: 3
 
   worker:
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1g
     <<: *backend
     # Celery com beat embutido (-B): mantenha UMA réplica deste serviço.
-    command: ["celery", "-A", "app.workers.celery_app", "worker", "-B", "--loglevel", "INFO", "--concurrency", "2"]
+    command: ["sh", "-c", "exec celery -A app.workers.celery_app worker -B --loglevel INFO --concurrency $${WORKER_CONCURRENCY:-2}"]
     volumes:
       - relatorios:/var/lib/v4insights/relatorios
     depends_on:
@@ -87,6 +116,12 @@ services:
       retries: 3
 
   frontend:
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512m
     build:
       context: ./frontend
     image: v4-insights-web:${APP_VERSION:-local}
@@ -94,6 +129,12 @@ services:
     networks: [interna]
 
   proxy:
+    logging: *logging
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256m
     image: caddy:2.8-alpine
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}

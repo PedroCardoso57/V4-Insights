@@ -5,7 +5,7 @@ Plataforma interna (uso exclusivo de colaboradores) para gestão de clientes, co
 
 Especificações em [`specs/`](specs/README.md) · Documentação em [`docs/`](docs/):
 [dados e contratos](docs/dados.md) · [permissões Meta/Google](docs/permissoes-meta-google.md) ·
-[runbook](docs/runbook.md).
+[runbook](docs/runbook.md) · [LGPD](docs/lgpd.md).
 
 ```
 backend/    FastAPI + Pydantic v2 + SQLAlchemy 2 + Alembic + Celery (Python 3.12+)
@@ -32,6 +32,8 @@ navegador ──▶ proxy (Caddy, HTTPS) ──┬─ /api/*, /health/* ─▶ a
 - Sincronização assíncrona e idempotente (UPSERT, chave por job, retry exponencial, freshness).
 - Relatórios: snapshot dos números no momento da solicitação → PDF A4 gerado no worker →
   download autenticado e auditado; retenção configurável.
+- Segurança e operação (SPEC-07): rate limit no login e em operações caras, proteção SSRF,
+  rotação de chave, métricas Prometheus internas, alertas por webhook, retenção LGPD.
 - Contratos comuns: listas `{items,page,page_size,total}`, erros `{error:{code,message,request_id}}`,
   202 com `job_id` para tarefas assíncronas. Cliente TypeScript gerado do OpenAPI.
 
@@ -100,6 +102,12 @@ cd frontend && npm ci && npm run dev      # http://localhost:3000
 | frontend | `npm run build && npm run check:bundle` | build e verificação de credenciais no bundle |
 | frontend | `npm run test:e2e` | E2E Playwright (requer build; API simulada) |
 | infra | `infra/backup/backup.sh` / `infra/backup/restore.sh <arquivo>` | backup criptografado / restauração |
+| infra | `infra/monitor/verificar.sh` | verificações do host com alerta (cron) |
+| infra | `infra/vps/provisionar.sh` | provisionamento seguro da VPS (uma vez, como root) |
+| backend | `python -m app.cli rotacionar-chave` / `revogar-sessoes` / `lgpd-exportar` / `lgpd-anonimizar` | operação e incidentes |
+
+Para o CI **bloquear merge**, ative em *Settings → Branches* a proteção da `main` exigindo os
+checks "Backend", "Frontend" e "Build das imagens".
 
 O CI (GitHub Actions) roda tudo isso, verifica migrations (base limpa, repetição, `alembic check`,
 rollback), a sincronia OpenAPI ↔ cliente TS e o build das imagens.
