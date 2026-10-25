@@ -49,8 +49,17 @@ jobs:
         run: uv run ruff check . && uv run ruff format --check .
       - name: Typecheck
         run: uv run mypy app
-      - name: Testes
+      - name: Testes (unit + integração, inclui migrations em base limpa e baseline)
         run: uv run pytest --cov=app --cov-report=term-missing
+      - name: OpenAPI sincronizado com o cliente do frontend
+        env:
+          ENCRYPTION_KEY: ZmFrZS1jaS1rZXktMDEyMzQ1Njc4OWFiY2RlZjAxMjM=
+          GOOGLE_OIDC_CLIENT_ID: ci
+          GOOGLE_OIDC_CLIENT_SECRET: ci
+        run: |
+          uv run python -m app.cli openapi --out ../frontend/openapi.json
+          git diff --exit-code -- ../frontend/openapi.json || {
+            echo "::error::frontend/openapi.json desatualizado. Rode 'python -m app.cli openapi --out ../frontend/openapi.json' e 'npm run gen:api'."; exit 1; }
       - name: Verificação de migrations
         env:
           ENCRYPTION_KEY: ZmFrZS1jaS1rZXktMDEyMzQ1Njc4OWFiY2RlZjAxMjM=
@@ -58,8 +67,8 @@ jobs:
           GOOGLE_OIDC_CLIENT_SECRET: ci
         run: |
           psql postgresql://v4:v4@localhost:5432/v4insights_test -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
-          uv run alembic upgrade head
-          uv run alembic upgrade head        # repetição é no-op
+          uv run python -m app.db.migrate    # base limpa
+          uv run python -m app.db.migrate    # repetição é no-op
           uv run alembic check               # modelos e migrations em sincronia
           uv run alembic downgrade base      # rollback completo
           uv run alembic upgrade head
@@ -78,10 +87,23 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - name: Cliente TypeScript gerado do OpenAPI está atualizado
+        run: npm run gen:api && git diff --exit-code -- src/services/api/schema.d.ts
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: Nenhuma credencial no bundle
+        run: npm run check:bundle
+      - name: E2E (Playwright)
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
 
   docker:
     name: Build das imagens
