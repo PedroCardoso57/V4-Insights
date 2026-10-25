@@ -1,11 +1,13 @@
 """Comandos administrativos.
 
 python -m app.cli criar-admin --email pessoa@empresa.com --nome "Nome"
+python -m app.cli openapi --out ../frontend/openapi.json
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 
 from sqlalchemy import func, select
@@ -45,15 +47,31 @@ def criar_admin(email: str, nome: str) -> int:
         db.close()
 
 
+def exportar_openapi(destino: str) -> int:
+    from app.main import app
+
+    conteudo = json.dumps(app.openapi(), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    if destino == "-":
+        sys.stdout.write(conteudo)
+    else:
+        with open(destino, "w", encoding="utf-8") as fh:
+            fh.write(conteudo)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="app.cli")
     sub = parser.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("criar-admin", help="cria ou promove um administrador")
     p.add_argument("--email", required=True)
     p.add_argument("--nome", required=True)
+    o = sub.add_parser("openapi", help="exporta o schema OpenAPI (fonte do cliente TypeScript)")
+    o.add_argument("--out", default="-", help="arquivo de saída ('-' = stdout)")
     args = parser.parse_args(argv)
     if args.cmd == "criar-admin":
         return criar_admin(args.email, args.nome)
+    if args.cmd == "openapi":
+        return exportar_openapi(args.out)
     return 1
 
 

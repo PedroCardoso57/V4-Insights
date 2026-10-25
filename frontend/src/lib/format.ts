@@ -1,4 +1,8 @@
-import type { KpiKey, Papel } from "../api/types";
+import type { Schemas } from "@/services/api/client";
+
+export type KpiKey = keyof Schemas["Kpis"];
+export type Papel = Schemas["Papel"];
+export type Plataforma = Schemas["Plataforma"];
 
 const AUSENTE = "—";
 
@@ -9,10 +13,7 @@ export function fmtMoeda(v: string | number | null | undefined, moeda = "BRL"): 
 
 export function fmtNumero(v: string | number | null | undefined, casas = 0): string {
   if (v === null || v === undefined) return AUSENTE;
-  return new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: casas,
-    maximumFractionDigits: casas,
-  }).format(Number(v));
+  return new Intl.NumberFormat("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas }).format(Number(v));
 }
 
 export function fmtPercent(v: string | number | null | undefined, casas = 2): string {
@@ -28,7 +29,7 @@ export function fmtData(iso: string | null | undefined): string {
 
 export function fmtDataHora(iso: string | null | undefined): string {
   if (!iso) return AUSENTE;
-  return new Date(iso).toLocaleString("pt-BR");
+  return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
 export const KPI_LABEL: Record<KpiKey, string> = {
@@ -44,7 +45,7 @@ export const KPI_LABEL: Record<KpiKey, string> = {
   roas: "ROAS",
 };
 
-// KPIs de custo: variação positiva é ruim.
+/** KPIs de custo: variação positiva é desfavorável. */
 export const KPI_CUSTO: KpiKey[] = ["cpc", "cpm", "cpa"];
 
 export function fmtKpi(k: KpiKey, v: string | number | null | undefined, moeda = "BRL"): string {
@@ -73,11 +74,16 @@ export const PAPEL_LABEL: Record<Papel, string> = {
   visualizador: "Visualizador",
 };
 
-export const PLATAFORMA_LABEL = { meta: "Meta Ads", google_ads: "Google Ads" } as const;
+export const PLATAFORMA_LABEL: Record<Plataforma, string> = { meta_ads: "Meta Ads", google_ads: "Google Ads" };
 
 export function isoHoje(offsetDias = 0): string {
   const d = new Date();
   d.setDate(d.getDate() + offsetDias);
-  const off = d.getTimezoneOffset();
-  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+
+/** Horas desde a última sincronização (null se nunca sincronizou). */
+export function horasDesde(iso: string | null | undefined, agora = Date.now()): number | null {
+  if (!iso) return null;
+  return (agora - new Date(iso).getTime()) / 3.6e6;
 }
