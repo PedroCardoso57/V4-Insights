@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import EDICAO, Principal, get_principal, require_roles
 from app.api.errors import AppError
 from app.api.rbac import get_cliente_autorizado, scope_clientes
+from app.core.ratelimit import por_usuario, regra
 from app.core.sessions import now
 from app.db.session import get_db
 from app.models import Relatorio, RelatorioExecucao, StatusCliente, StatusExecucao
@@ -217,7 +218,12 @@ def excluir(
     return Response(status_code=204)
 
 
-@router.post("/{relatorio_id}/gerar", response_model=TarefaAceita, status_code=202)
+@router.post(
+    "/{relatorio_id}/gerar",
+    response_model=TarefaAceita,
+    status_code=202,
+    dependencies=[Depends(por_usuario("gerar_pdf", regra("caro")))],
+)
 def gerar(
     relatorio_id: uuid.UUID,
     request: Request,

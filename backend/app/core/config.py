@@ -60,6 +60,22 @@ class Settings(BaseSettings):
     sync_max_retries: int = 5
     sync_max_concurrency_per_provider: int = 2
 
+    # Rotação da chave de criptografia: chaves antigas (separadas por vírgula) só para
+    # decifrar; `python -m app.cli rotacionar-chave` recifra tudo com ENCRYPTION_KEY.
+    encryption_keys_previous: list[str] = Field(default_factory=list)
+
+    # Rate limit (SPEC-07): "<requisições>/<segundos>"; vazio desativa.
+    rate_limit_login: str = "20/60"
+    rate_limit_operacoes_caras: str = "10/60"
+
+    # Retenção (LGPD): dados operacionais expurgados automaticamente.
+    audit_retention_days: int = 730
+    sessions_retention_days: int = 30
+
+    # Alertas (SPEC-07): webhook (Slack/Google Chat/Teams compatível com JSON {"text"}).
+    alert_webhook_url: str | None = None
+    alert_sync_falhas_consecutivas: int = 3
+
     # Relatórios (SPEC-05): storage privado local (volume) e retenção dos PDFs.
     reports_storage_dir: str = "/var/lib/v4insights/relatorios"
     reports_retention_days: int = 90
@@ -69,6 +85,13 @@ class Settings(BaseSettings):
     def _split_origins(cls, v: object) -> object:
         if isinstance(v, str):
             return [o.strip().rstrip("/") for o in v.split(",") if o.strip()]
+        return v
+
+    @field_validator("encryption_keys_previous", mode="before")
+    @classmethod
+    def _split_keys(cls, v: object) -> object:
+        if isinstance(v, str):
+            return [k.strip() for k in v.split(",") if k.strip()]
         return v
 
     @field_validator("encryption_key")
@@ -86,8 +109,21 @@ class Settings(BaseSettings):
     def _defaults_and_prod_checks(self) -> Settings:
         if not self.allowed_origins:
             self.allowed_origins = [self.frontend_url.rstrip("/")]
-        if self.environment == "production" and not self.cookie_secure:
-            raise ValueError("COOKIE_SECURE deve ser true em produção")
+        if self.environment == "production":
+            if not self.cookie_secure:
+                raise ValueError("COOKIE_SECURE deve ser true em produção")
+            urls = {
+                "API_BASE_URL": self.api_base_url,
+                "FRONTEND_URL": self.frontend_url,
+                "GOOGLE_OIDC_AUTHORIZE_URL": self.google_oidc_authorize_url,
+                "GOOGLE_OIDC_TOKEN_URL": self.google_oidc_token_url,
+                "GOOGLE_OIDC_JWKS_URL": self.google_oidc_jwks_url,
+            }
+            inseguras = [k for k, v in urls.items() if not v.startswith("https://")]
+            if inseguras:
+                raise ValueError(f"Em produção use https em: {', '.join(inseguras)}")
+        for k in self.encryption_keys_previous:
+            self._check_fernet_key(k)
         if not 1 <= self.sync_interval_hours <= 168:
             raise ValueError("SYNC_INTERVAL_HOURS deve estar entre 1 e 168")
         return self

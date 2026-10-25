@@ -9,6 +9,7 @@ from typing import Any
 from urllib.parse import urlencode
 
 from app.core.config import get_settings
+from app.core.urls import UrlNaoPermitida, exigir_url_permitida
 from app.integrations.base import (
     ConfigProviderError,
     ExternalAccount,
@@ -23,6 +24,7 @@ from app.integrations.base import (
 )
 
 SCOPES = ["ads_read"]
+HOSTS_GRAPH = frozenset({"graph.facebook.com"})
 # Códigos de erro Graph: 4/17/32/613/80000-80014 = rate limit; 190 = token inválido;
 # 10/200-299 = permissão.
 _RATE_LIMIT_CODES = {4, 17, 32, 613} | set(range(80000, 80015))
@@ -189,6 +191,11 @@ class MetaProvider:
             nxt = (data.get("paging") or {}).get("next")
             if not nxt:
                 return
+            # A URL vem da resposta do provedor: só segue para o host da Graph API (SSRF).
+            try:
+                exigir_url_permitida(nxt, HOSTS_GRAPH)
+            except UrlNaoPermitida as exc:
+                raise ProviderError(f"paginação recusada: {exc}") from exc
             resp = http_call("GET", nxt)  # URL já contém o token
             self._check(resp)
             data = resp.json()

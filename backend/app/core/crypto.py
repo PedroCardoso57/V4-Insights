@@ -8,7 +8,8 @@ import secrets
 import uuid
 from typing import Any
 
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.fernet import Fernet, InvalidToken, MultiFernet
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -25,8 +26,22 @@ def random_token(nbytes: int = 32) -> str:
     return secrets.token_urlsafe(nbytes)
 
 
-def _fernet() -> Fernet:
-    return Fernet(get_settings().encryption_key.encode())
+def _fernet() -> MultiFernet:
+    """Cifra com a chave atual; decifra também com as anteriores (rotação sem downtime)."""
+    s = get_settings()
+    chaves = [s.encryption_key, *s.encryption_keys_previous]
+    return MultiFernet([Fernet(k.encode()) for k in chaves])
+
+
+def rotacionar_chaves(db: Session) -> int:
+    """Recifra todas as credenciais com a chave atual. Retorna quantas foram regravadas."""
+    mf = _fernet()
+    n = 0
+    for cred in db.scalars(select(CredencialIntegracao)):
+        cred.ciphertext = mf.rotate(cred.ciphertext)
+        n += 1
+    db.commit()
+    return n
 
 
 def store_secret(

@@ -13,6 +13,7 @@ from app.api.deps import Principal, get_principal
 from app.core import oidc
 from app.core.config import get_settings
 from app.core.crypto import random_token, sha256_hex
+from app.core.ratelimit import por_ip, regra
 from app.core.sessions import clear_session_cookies, create_session, now, set_session_cookies
 from app.db.session import get_db
 from app.models import OAuthState, Usuario
@@ -25,7 +26,7 @@ log = logging.getLogger(__name__)
 STATE_TTL = timedelta(minutes=10)
 
 
-@router.get("/google/login")
+@router.get("/google/login", dependencies=[Depends(por_ip("login", regra("login")))])
 def google_login(db: Session = Depends(get_db)) -> RedirectResponse:
     state, nonce, verifier = random_token(32), random_token(32), random_token(48)
     db.add(
@@ -57,7 +58,7 @@ def _consume_state(db: Session, state: str | None, finalidade: str) -> OAuthStat
     return row
 
 
-@router.get("/google/callback")
+@router.get("/google/callback", dependencies=[Depends(por_ip("callback", regra("login")))])
 def google_callback(
     request: Request,
     state: str | None = None,

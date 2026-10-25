@@ -55,8 +55,14 @@ class ErrorResponse(BaseModel):
 class AppError(HTTPException):
     """HTTPException com código de erro explícito (ex.: PROVIDER_QUOTA)."""
 
-    def __init__(self, status_code: int, message: str, code: str | None = None) -> None:
-        super().__init__(status_code, message)
+    def __init__(
+        self,
+        status_code: int,
+        message: str,
+        code: str | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> None:
+        super().__init__(status_code, message, headers=headers)
         self.code = code or CODES.get(status_code, "ERROR")
 
 
@@ -115,5 +121,5 @@ def install(app: FastAPI) -> None:
 
 # Respostas de erro documentadas no OpenAPI de todas as rotas de negócio.
 ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
-    code: {"model": ErrorResponse, "description": CODES[code]} for code in (401, 403, 404, 409, 422)
+    code: {"model": ErrorResponse, "description": CODES[code]} for code in (401, 403, 404, 409, 422, 429)
 }

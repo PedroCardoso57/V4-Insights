@@ -14,6 +14,7 @@ from app.api.errors import AppError
 from app.api.rbac import get_cliente_autorizado, scope_clientes
 from app.core.config import get_settings
 from app.core.crypto import delete_secret, load_secret, random_token, sha256_hex, store_secret
+from app.core.ratelimit import por_usuario, regra
 from app.core.sanitize import sanitize
 from app.core.sessions import now
 from app.db.session import get_db
@@ -111,7 +112,11 @@ def listar(
     )
 
 
-@router.post("/{plataforma}/autorizar", response_model=AutorizarOut)
+@router.post(
+    "/{plataforma}/autorizar",
+    response_model=AutorizarOut,
+    dependencies=[Depends(por_usuario("autorizar", regra("caro")))],
+)
 def autorizar(
     plataforma: Plataforma,
     body: AutorizarIn,
@@ -367,7 +372,12 @@ def selecionar_contas(
     return IntegracaoOut.model_validate(integ)
 
 
-@router.post("/{integracao_id}/sincronizar", response_model=TarefaAceita, status_code=202)
+@router.post(
+    "/{integracao_id}/sincronizar",
+    response_model=TarefaAceita,
+    status_code=202,
+    dependencies=[Depends(por_usuario("sincronizar", regra("caro")))],
+)
 def sincronizar(
     integracao_id: uuid.UUID,
     request: Request,
