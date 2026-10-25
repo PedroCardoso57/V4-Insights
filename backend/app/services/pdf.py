@@ -45,6 +45,15 @@ KPI_LABEL = {
     "cpa": "Custo por conversão",
     "roas": "ROAS",
 }
+# Rótulos curtos para cabeçalhos de colunas estreitas (sem quebra no meio da palavra).
+KPI_CURTO = {
+    **KPI_LABEL,
+    "investimento": "Invest.",
+    "impressoes": "Impr.",
+    "conversoes": "Conv.",
+    "valor_conversoes": "Valor conv.",
+    "cpa": "CPA",
+}
 GRAFICO = {
     "serie_investimento": ("investimento", "Investimento por período"),
     "serie_cliques": ("cliques", "Cliques por período"),
@@ -193,7 +202,13 @@ def _grafico(serie: dict[str, Any], kpi: str, titulo: str, largura: float) -> Dr
     )
     lp.xValueAxis.labels.fontSize = 6
     lp.yValueAxis.labels.fontSize = 6
+    # Escala explícita: o eixo sempre contém a maior série (atual ou comparação).
+    maximo = max((v for linha in linhas for _, v in linha), default=0.0)
+    topo = maximo * 1.15 if maximo > 0 else 1.0
     lp.yValueAxis.valueMin = 0
+    lp.yValueAxis.valueMax = topo
+    lp.yValueAxis.valueSteps = [topo * i / 4 for i in range(5)]
+    lp.yValueAxis.labelTextFormat = lambda v: _num(v, 0) if topo >= 10 else _num(v, 2)
     d.add(lp)
     return d
 
@@ -214,7 +229,16 @@ def _campanhas(
         for k in kpis
         if k in ("investimento", "impressoes", "cliques", "ctr", "cpc", "conversoes", "cpa", "roas")
     ][:6]
-    linhas: list[list[Any]] = [["Campanha", "Plataforma", *[KPI_LABEL[k] for k in cols]]]
+    # Cabeçalhos como Paragraph: quebram linha em vez de invadir a coluna vizinha.
+    cab = ParagraphStyle("cab", parent=est["cel"], fontName="Helvetica-Bold", fontSize=7)
+    cab_num = ParagraphStyle("cabn", parent=cab, alignment=2)
+    linhas: list[list[Any]] = [
+        [
+            Paragraph("Campanha", cab),
+            Paragraph("Plataforma", cab),
+            *[Paragraph(KPI_CURTO[k], cab_num) for k in cols],
+        ]
+    ]
     for c in camps[:limite] if limite else camps:
         nome = c.get("campanha_nome") or c["campanha_externa_id"]
         linhas.append(
@@ -224,10 +248,14 @@ def _campanhas(
                 *[fmt_kpi(k, c["kpis"].get(k), moeda) for k in cols],
             ]
         )
-    resto = (largura * 0.62) / max(len(cols), 1)
+    # Colunas monetárias recebem mais espaço (valores como "R$ 12.361,70").
+    pesos = [
+        1.5 if c in ("investimento", "cpc", "cpa") else 0.8 if c == "ctr" else 1.0 for c in cols
+    ]
+    larguras = [largura * 0.64 * p / sum(pesos) for p in pesos]
     t = LongTable(
         linhas,
-        colWidths=[largura * 0.26, largura * 0.12, *[resto] * len(cols)],
+        colWidths=[largura * 0.24, largura * 0.12, *larguras],
         repeatRows=1,
         splitByRow=True,
     )
