@@ -51,6 +51,7 @@ export function Equipe({ clienteId, papel }: { clienteId: string; papel?: Schema
         vazio={(d) => d.items.length === 0 && <Vazio titulo="Nenhum colaborador atribuído">Administradores acessam todos os clientes.</Vazio>}
       >
         {(d) => (
+          <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
           <Table>
             <TableHeader>
               <TableRow>
@@ -64,13 +65,13 @@ export function Equipe({ clienteId, papel }: { clienteId: string; papel?: Schema
             <TableBody>
               {d.items.map((m) => (
                 <TableRow key={m.id}>
-                  <TableCell>{m.nome} {!m.ativo && <Badge>inativo</Badge>}</TableCell>
+                  <TableCell className="font-semibold">{m.nome} {!m.ativo && <Badge>inativo</Badge>}</TableCell>
                   <TableCell>{m.email}</TableCell>
                   <TableCell>{PAPEL_LABEL[m.papel as Schemas["Papel"]]}</TableCell>
                   <TableCell>{fmtData(m.atribuido_em)}</TableCell>
                   {gerir && (
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setRemovendo(m)}>
+                      <Button variant="destructive" size="sm" onClick={() => setRemovendo(m)}>
                         <UserMinusIcon /> Remover
                       </Button>
                     </TableCell>
@@ -79,6 +80,7 @@ export function Equipe({ clienteId, papel }: { clienteId: string; papel?: Schema
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </Consulta>
       <Confirmar

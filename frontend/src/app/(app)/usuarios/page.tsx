@@ -50,13 +50,14 @@ export default function UsuariosPage() {
         descricao="Não há autocadastro: cadastre o e-mail Google do colaborador e defina o perfil."
         acoes={<Button onClick={() => setEditando("novo")}><PlusIcon /> Novo usuário</Button>}
       />
-      <form className="mb-4 flex gap-2" role="search" onSubmit={(e) => { e.preventDefault(); setPage(1); setBusca(texto.trim() || undefined); }}>
+      <form className="mb-5 flex flex-wrap items-center gap-2 rounded-xl border bg-card p-4 shadow-xs" role="search" onSubmit={(e) => { e.preventDefault(); setPage(1); setBusca(texto.trim() || undefined); }}>
         <Input type="search" aria-label="Buscar usuário" placeholder="Nome ou e-mail" value={texto} onChange={(e) => setTexto(e.target.value)} className="w-64" />
         <Button type="submit" variant="outline"><SearchIcon /> Buscar</Button>
       </form>
       <Consulta query={q} vazio={(d) => d.items.length === 0 && <Vazio titulo="Nenhum usuário encontrado" />}>
         {(d) => (
           <>
+            <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -71,12 +72,12 @@ export default function UsuariosPage() {
               <TableBody>
                 {d.items.map((u) => (
                   <TableRow key={u.id}>
-                    <TableCell>{u.nome}</TableCell>
-                    <TableCell>{u.email}</TableCell>
+                    <TableCell className="font-semibold">{u.nome}</TableCell>
+                    <TableCell className="text-text-secondary">{u.email}</TableCell>
                     <TableCell>{PAPEL_LABEL[u.papel as Papel]}</TableCell>
                     <TableCell className="flex flex-wrap gap-1">
-                      <Badge variant={u.ativo ? "success" : "secondary"}>{u.ativo ? "ativo" : "inativo"}</Badge>
-                      {!u.vinculado_google && <Badge variant="warning">nunca entrou</Badge>}
+                      <Badge ponto variant={u.ativo ? "success" : "destructive"}>{u.ativo ? "ativo" : "inativo"}</Badge>
+                      {!u.vinculado_google && <Badge ponto variant="warning">nunca entrou</Badge>}
                     </TableCell>
                     <TableCell>{fmtDataHora(u.ultimo_login_em)}</TableCell>
                     <TableCell className="text-right">
@@ -86,6 +87,7 @@ export default function UsuariosPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
             <Paginacao page={d.page} pageSize={d.page_size} total={d.total} onPage={setPage} />
           </>
         )}

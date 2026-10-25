@@ -8,10 +8,10 @@ import { toast } from "sonner";
 
 import { Confirmar } from "@/components/confirmar";
 import { Consulta, mensagemDeErro } from "@/components/estado";
+import { Inicial } from "@/components/inicial";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useArquivarCliente, useCliente } from "@/features/clientes/api";
 import { ClienteFormDialog } from "@/features/clientes/cliente-form";
@@ -40,7 +40,8 @@ export default function ClienteDetalhePage() {
         return (
           <>
             <PageHeader
-              titulo={<span className="flex flex-wrap items-center gap-2">{c.nome} {arquivado && <Badge>arquivado</Badge>}</span>}
+              titulo={<span className="flex flex-wrap items-center gap-3"><Inicial nome={c.nome} className="size-10 rounded-xl text-sm" />{c.nome}</span>}
+              selo={arquivado ? <Badge ponto>arquivado</Badge> : <Badge ponto variant="success">ativo</Badge>}
               descricao={[c.nome_fantasia, c.documento && `Documento ${c.documento}`, `desde ${fmtData(c.criado_em)}`].filter(Boolean).join(" · ")}
               acoes={
                 <>
@@ -48,7 +49,7 @@ export default function ClienteDetalhePage() {
                   {pode.gerirClientes(papel) && !arquivado && (
                     <>
                       <Button variant="outline" onClick={() => setEditando(true)}><PencilIcon /> Editar</Button>
-                      <Button variant="outline" className="text-destructive" onClick={() => setArquivando(true)}><ArchiveIcon /> Arquivar</Button>
+                      <Button variant="destructive" onClick={() => setArquivando(true)}><ArchiveIcon /> Arquivar</Button>
                     </>
                   )}
                 </>
@@ -66,7 +67,7 @@ export default function ClienteDetalhePage() {
                 <TabsContent value="integracoes"><IntegracoesLista clienteId={c.id} arquivado={arquivado} /></TabsContent>
               )}
               <TabsContent value="relatorios">
-                <Card><CardContent className="pt-5"><ListaRelatorios clienteId={c.id} /></CardContent></Card>
+                <ListaRelatorios clienteId={c.id} />
               </TabsContent>
               <TabsContent value="equipe"><Equipe clienteId={c.id} papel={papel} /></TabsContent>
             </Tabs>

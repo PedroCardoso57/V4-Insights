@@ -47,7 +47,7 @@ export function JobsDialog({ integracao, onClose }: { integracao: Integracao | n
                       <TableCell>{(j.conta_anuncio_id && contas.get(j.conta_anuncio_id)) ?? "—"}</TableCell>
                       <TableCell>{j.tipo}</TableCell>
                       <TableCell>{fmtData(j.periodo_inicio)} – {fmtData(j.periodo_fim)}</TableCell>
-                      <TableCell><Badge variant={TOM[j.status]}>{j.status}</Badge></TableCell>
+                      <TableCell><Badge ponto variant={TOM[j.status]}>{j.status}</Badge></TableCell>
                       <TableCell className="text-right tabular-nums">{j.total_registros}</TableCell>
                       <TableCell className="text-right tabular-nums">{j.tentativa}</TableCell>
                       <TableCell className="max-w-64 text-xs">{j.erro_sanitizado ?? ""}</TableCell>

@@ -44,6 +44,7 @@ export function ListaRelatorios({ clienteId, search, nomesClientes }: { clienteI
                 <Button asChild size="sm"><Link href={novo}><FileTextIcon /> Novo relatório</Link></Button>
               </div>
             )}
+            <div className="overflow-hidden rounded-xl border bg-card shadow-xs">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -59,11 +60,11 @@ export function ListaRelatorios({ clienteId, search, nomesClientes }: { clienteI
                   <TableRow key={r.id}>
                     <TableCell><Link className="font-medium hover:underline" href={`/relatorios?id=${r.id}`}>{r.titulo}</Link></TableCell>
                     {nomesClientes && <TableCell>{nomesClientes.get(r.cliente_id) ?? "—"}</TableCell>}
-                    <TableCell><Badge variant="outline">{TEMPLATES[r.configuracao.template ?? "visao_executiva"]}</Badge></TableCell>
-                    <TableCell>{fmtDataHora(r.atualizado_em)}</TableCell>
+                    <TableCell><Badge variant="secondary">{TEMPLATES[r.configuracao.template ?? "visao_executiva"]}</Badge></TableCell>
+                    <TableCell className="font-mono-num text-xs text-muted-foreground">{fmtDataHora(r.atualizado_em)}</TableCell>
                     {pode.editar(papel) && (
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setAlvo(r)} aria-label={`Excluir ${r.titulo}`}>
+                        <Button variant="ghost" size="icon-sm" className="hover:bg-destructive-soft hover:text-destructive" onClick={() => setAlvo(r)} aria-label={`Excluir ${r.titulo}`}>
                           <Trash2Icon />
                         </Button>
                       </TableCell>
@@ -72,6 +73,7 @@ export function ListaRelatorios({ clienteId, search, nomesClientes }: { clienteI
                 ))}
               </TableBody>
             </Table>
+            </div>
             <Paginacao page={d.page} pageSize={d.page_size} total={d.total} onPage={setPage} />
           </>
         )}

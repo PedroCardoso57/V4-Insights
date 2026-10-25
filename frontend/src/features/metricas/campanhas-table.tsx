@@ -3,8 +3,9 @@
 import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { PlataformaBadge } from "@/components/plataforma-badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { fmtKpi, KPI_LABEL, PLATAFORMA_LABEL, type KpiKey } from "@/lib/format";
+import { fmtKpi, KPI_LABEL, type KpiKey } from "@/lib/format";
 import type { Schemas } from "@/services/api/client";
 
 type Campanha = Schemas["CampanhaOut"];
@@ -59,10 +60,10 @@ export function CampanhasTable({ campanhas, moeda = "BRL" }: { campanhas: Campan
       <TableBody>
         {linhas.map((c) => (
           <TableRow key={`${c.conta_anuncio_id}-${c.campanha_externa_id}`}>
-            <TableCell className="max-w-64 truncate" title={c.campanha_nome ?? undefined}>{c.campanha_nome ?? c.campanha_externa_id}</TableCell>
-            <TableCell>{PLATAFORMA_LABEL[c.plataforma]}</TableCell>
+            <TableCell className="max-w-64 truncate font-medium" title={c.campanha_nome ?? undefined}>{c.campanha_nome ?? c.campanha_externa_id}</TableCell>
+            <TableCell><PlataformaBadge plataforma={c.plataforma} /></TableCell>
             {COLS.map((k) => (
-              <TableCell key={k} className="text-right tabular-nums">{fmtKpi(k, c.kpis[k], moeda)}</TableCell>
+              <TableCell key={k} className="text-right font-mono-num text-xs">{fmtKpi(k, c.kpis[k], moeda)}</TableCell>
             ))}
           </TableRow>
         ))}

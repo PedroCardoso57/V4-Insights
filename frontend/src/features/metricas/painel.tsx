@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { Consulta, Vazio } from "@/components/estado";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIntegracoes } from "@/features/integracoes/api";
@@ -38,8 +38,8 @@ export function PainelCliente({ clienteId, inicial }: { clienteId: string; inici
       <Consulta
         query={resumo}
         carregando={
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
-            {Array.from({ length: 9 }, (_, i) => <Skeleton key={i} className="h-24" />)}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-9">
+            {Array.from({ length: 9 }, (_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
           </div>
         }
         vazio={() =>
@@ -55,8 +55,11 @@ export function PainelCliente({ clienteId, inicial }: { clienteId: string; inici
             <AvisoSync resumo={r} agora={agora} />
             <KpiGrid resumo={r} />
             <Card>
-              <CardHeader>
-                <CardTitle>Evolução</CardTitle>
+              <CardHeader className="border-b">
+                <div>
+                  <CardTitle>Evolução temporal</CardTitle>
+                  <CardDescription>Acompanhamento consolidado no período · passe o cursor para inspecionar</CardDescription>
+                </div>
                 <Select value={kpiSerie} onValueChange={(v) => setKpiSerie(v as KpiKey)}>
                   <SelectTrigger className="w-48" aria-label="Métrica do gráfico"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -66,15 +69,20 @@ export function PainelCliente({ clienteId, inicial }: { clienteId: string; inici
                   </SelectContent>
                 </Select>
               </CardHeader>
-              <CardContent>
-                <Consulta query={serie} carregando={<Skeleton className="h-72" />}>
+              <CardContent className="pt-4">
+                <Consulta query={serie} carregando={<Skeleton className="h-72 rounded-xl" />}>
                   {(s) => <SerieChart serie={s} kpi={kpiSerie} moeda={moeda} />}
                 </Consulta>
               </CardContent>
             </Card>
             <Card>
-              <CardHeader><CardTitle>Campanhas</CardTitle></CardHeader>
-              <CardContent>
+              <CardHeader className="border-b">
+                <div>
+                  <CardTitle>Desempenho por campanha</CardTitle>
+                  <CardDescription>Totais do período filtrado</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
                 <Consulta query={campanhas}>{(c) => <CampanhasTable campanhas={c.items} moeda={moeda} />}</Consulta>
               </CardContent>
             </Card>

@@ -21,7 +21,8 @@ export function Breadcrumb() {
   const partes = path.split("/").filter(Boolean);
   const clienteId = partes[0] === "clientes" && partes[1] && UUID.test(partes[1]) ? partes[1] : null;
   const cliente = useCliente(clienteId);
-  const itens = [{ href: "/", label: "Início" }];
+  const itens = [{ href: "/", label: "V4 Insights" }];
+  if (!partes.length) itens.push({ href: "/#visao-geral", label: "Visão geral" });
   partes.forEach((p, i) => {
     const href = "/" + partes.slice(0, i + 1).join("/");
     const label = UUID.test(p) ? (p === clienteId ? (cliente.data?.nome ?? "…") : "Detalhe") : (ROTULOS[p] ?? p);
@@ -29,12 +30,12 @@ export function Breadcrumb() {
   });
   return (
     <nav aria-label="Trilha de navegação" className="min-w-0">
-      <ol className="flex items-center gap-1 truncate text-sm text-muted-foreground">
+      <ol className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
         {itens.map((it, i) => (
           <li key={it.href} className="flex min-w-0 items-center gap-1">
-            {i > 0 && <ChevronRightIcon className="size-3.5 shrink-0" aria-hidden />}
+            {i > 0 && <ChevronRightIcon className="size-[13px] shrink-0 text-faint" aria-hidden />}
             {i === itens.length - 1 ? (
-              <span aria-current="page" className="truncate font-medium text-foreground">
+              <span aria-current="page" className="truncate font-semibold text-foreground">
                 {it.label}
               </span>
             ) : (
