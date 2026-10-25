@@ -28,3 +28,6 @@ coverage/
 
 # Backups locais
 backups/
+
+# dump local do Redis
+dump.rdb
