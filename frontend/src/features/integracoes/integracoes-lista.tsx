@@ -28,7 +28,7 @@ const CONECTORES: Record<Plataforma, { sigla: string; tile: string; categoria: s
   },
   google_ads: {
     sigla: "GA",
-    tile: "bg-primary-soft text-primary",
+    tile: "bg-primary-soft text-primary-ink",
     categoria: "Mídia paga",
     descricao: "Contas e MCC, campanhas de Pesquisa, Performance Max, Display e YouTube com valor de conversão.",
   },

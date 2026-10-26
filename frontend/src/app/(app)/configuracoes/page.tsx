@@ -61,7 +61,7 @@ export default function ConfiguracoesPage() {
                   onClick={() => setTema(id)}
                   className={cn(
                     "flex cursor-pointer items-center gap-2.5 rounded-xl border p-3 text-left text-[13px] font-medium transition-colors hover:bg-subtle",
-                    tema === id && "border-primary bg-primary-soft text-primary hover:bg-primary-soft",
+                    tema === id && "border-primary bg-primary-soft text-primary-ink hover:bg-primary-soft",
                   )}
                 >
                   <Icon className="size-4" aria-hidden /> {label}

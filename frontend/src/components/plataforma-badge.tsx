@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 const TOM: Record<Plataforma, { fundo: string; ponto: string }> = {
   meta_ads: { fundo: "bg-info-soft text-info", ponto: "bg-info" },
-  google_ads: { fundo: "bg-primary-soft text-primary", ponto: "bg-primary" },
+  google_ads: { fundo: "bg-primary-soft text-primary-ink", ponto: "bg-primary" },
 };
 
 /** Selo da plataforma de mídia (Meta Ads em azul, Google Ads em vermelho, como no gráfico). */

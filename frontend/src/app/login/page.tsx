@@ -17,7 +17,7 @@ export default function LoginPage() {
             "radial-gradient(circle at 50% 45%, rgba(10,10,14,0.52) 0%, rgba(6,7,10,0.84) 75%, rgba(4,4,7,0.92) 100%)",
         }}
       />
-      <div aria-hidden className="pointer-events-none absolute -top-28 left-1/2 h-48 w-[620px] -translate-x-1/2 bg-[#e5484d]/20 blur-[110px]" />
+      <div aria-hidden className="pointer-events-none absolute -top-28 left-1/2 h-48 w-[620px] -translate-x-1/2 bg-[#e50914]/20 blur-[110px]" />
       <Suspense>
         <LoginCard />
       </Suspense>
