@@ -10,9 +10,17 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PLATAFORMA_LABEL } from "@/lib/format";
+import { PLATAFORMA_LABEL, type Plataforma } from "@/lib/format";
 
 import { useContasDisponiveis, useSelecionarContas, type Integracao } from "./api";
+
+/** Exemplos de tipos de conversão aceitos no mapeamento de cada plataforma. */
+const PLACEHOLDER_CONVERSAO: Record<Plataforma, string> = {
+  meta_ads: "ex.: purchase, lead",
+  google_ads: "conversions",
+  linkedin_ads: "external_website_conversions, one_click_leads",
+  tiktok_ads: "conversion, complete_payment",
+};
 
 export function SelecionarContasDialog({ integracao, onClose }: { integracao: Integracao | null; onClose: () => void }) {
   // `key` reinicia o estado do formulário a cada integração aberta.
@@ -103,7 +111,7 @@ function Conteudo({ integracao, onClose }: { integracao: Integracao; onClose: ()
                       <TableCell>
                         <Input
                           aria-label={`Ações de conversão de ${c.nome}`}
-                          placeholder={integracao.plataforma === "meta_ads" ? "ex.: purchase, lead" : "conversions"}
+                          placeholder={PLACEHOLDER_CONVERSAO[integracao.plataforma]}
                           value={acoes[c.conta_externa_id] ?? ""}
                           onChange={(e) => setAcoes({ ...acoes, [c.conta_externa_id]: e.target.value })}
                         />

@@ -81,9 +81,9 @@ export default function InicioPage() {
               <>
                 <Indicador
                   rotulo="Integrações conectadas"
-                  dica="Integrações Meta Ads e Google Ads com status conectada"
+                  dica="Integrações de mídia paga (Meta, Google, LinkedIn e TikTok) com status conectada"
                   valor={`${fmtNumero(conectadas.length)}/${fmtNumero(lista.length)}`}
-                  rodape="Meta Ads · Google Ads"
+                  rodape="Meta · Google · LinkedIn · TikTok"
                 />
                 <Indicador
                   rotulo="Contas de anúncio"
@@ -195,7 +195,7 @@ export default function InicioPage() {
                 d.items.length === 0 && (
                   <div className="p-5">
                     <Vazio titulo="Nenhuma integração" acao={<Button asChild size="sm"><Link href="/integracoes">Conectar contas</Link></Button>}>
-                      Conecte Meta Ads ou Google Ads para começar a coletar métricas.
+                      Conecte Meta Ads, Google Ads, LinkedIn Ads ou TikTok Ads para começar a coletar métricas.
                     </Vazio>
                   </div>
                 )

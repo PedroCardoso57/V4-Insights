@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { fmtData, fmtDataHora, PLATAFORMA_LABEL, type Plataforma } from "@/lib/format";
+import { fmtData, fmtDataHora, PLATAFORMA_LABEL, PLATAFORMAS, type Plataforma } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import { STATUS_INTEGRACAO as STATUS } from "./alertas";
@@ -31,6 +31,18 @@ const CONECTORES: Record<Plataforma, { sigla: string; tile: string; categoria: s
     tile: "bg-primary-soft text-primary-ink",
     categoria: "Mídia paga",
     descricao: "Contas e MCC, campanhas de Pesquisa, Performance Max, Display e YouTube com valor de conversão.",
+  },
+  linkedin_ads: {
+    sigla: "LI",
+    tile: "bg-success-soft text-success",
+    categoria: "Mídia paga",
+    descricao: "Contas do Campaign Manager, grupos de campanhas, campanhas e criativos com conversões e leads (escopos r_ads e r_ads_reporting).",
+  },
+  tiktok_ads: {
+    sigla: "TT",
+    tile: "bg-secondary text-foreground",
+    categoria: "Mídia paga",
+    descricao: "Contas de anunciante do TikTok for Business, campanhas, grupos de anúncios e anúncios com conversões e valor de compra.",
   },
 };
 
@@ -61,7 +73,7 @@ export function IntegracoesLista({ clienteId, arquivado, mostrarCliente }: { cli
     <div className="grid gap-5">
       {clienteId && !arquivado && (
         <div className="grid gap-4 md:grid-cols-2">
-          {(["meta_ads", "google_ads"] as const).map((p) => (
+          {PLATAFORMAS.map((p) => (
             <Card key={p} className="flex flex-col p-5">
               <div className="flex items-center gap-3">
                 <Selo plataforma={p} />
@@ -89,7 +101,7 @@ export function IntegracoesLista({ clienteId, arquivado, mostrarCliente }: { cli
         vazio={(d) =>
           d.items.length === 0 && (
             <Vazio titulo="Nenhuma integração conectada">
-              {clienteId ? "Conecte Meta Ads ou Google Ads para começar a coletar métricas." : "Abra um cliente para conectar suas contas de anúncio."}
+              {clienteId ? "Conecte Meta Ads, Google Ads, LinkedIn Ads ou TikTok Ads para começar a coletar métricas." : "Abra um cliente para conectar suas contas de anúncio."}
             </Vazio>
           )
         }

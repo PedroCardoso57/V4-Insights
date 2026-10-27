@@ -166,11 +166,13 @@ def callback(
     request: Request,
     state: str | None = None,
     code: str | None = None,
+    auth_code: str | None = None,  # TikTok devolve o código neste parâmetro
     error: str | None = None,
     principal: Principal = Depends(require_roles(*EDICAO)),
     db: Session = Depends(get_db),
 ) -> RedirectResponse:
     front = get_settings().frontend_url.rstrip("/")
+    code = code or auth_code
     if not state:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "state ausente")
     st = db.get(OAuthState, sha256_hex(state), with_for_update=True)

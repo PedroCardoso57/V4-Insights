@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useClientes } from "@/features/clientes/api";
-import { KPI_LABEL, PLATAFORMA_LABEL } from "@/lib/format";
+import { KPI_LABEL, PLATAFORMA_LABEL, PLATAFORMAS } from "@/lib/format";
 
 import { useGerarPdf, useSalvarRelatorio, type Relatorio } from "./api";
 import { Execucoes } from "./execucoes";
@@ -178,7 +178,7 @@ export function EditorRelatorio({
                 <legend className="mb-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">Fontes</legend>
                 <Controller control={control} name="plataformas" render={({ field }) => (
                   <div className="flex flex-wrap gap-4">
-                    {(["meta_ads", "google_ads"] as const).map((p) => (
+                    {PLATAFORMAS.map((p) => (
                       <Label key={p} className="font-normal">
                         <Checkbox checked={field.value.includes(p)} onCheckedChange={(v) => field.onChange(toggle(field.value, p, v === true))} />
                         {PLATAFORMA_LABEL[p]}

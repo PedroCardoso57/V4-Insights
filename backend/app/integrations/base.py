@@ -5,7 +5,7 @@ from __future__ import annotations
 import random
 from collections.abc import Iterator
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import Any, Protocol
 
@@ -122,6 +122,15 @@ def backoff_seconds(tentativa: int, base: float = 30.0, cap: float = 3600.0) -> 
     """Backoff exponencial com jitter: 30s, 60s, 120s... até 1h."""
     delay: float = min(cap, base * (2 ** max(0, tentativa - 1)))
     return delay * (0.8 + random.random() * 0.4)  # noqa: S311 - jitter, não criptográfico
+
+
+def janelas(inicio: date, fim: date, dias: int) -> Iterator[tuple[date, date]]:
+    """Divide [inicio, fim] em janelas de até `dias` dias (limites de período dos provedores)."""
+    atual = inicio
+    while atual <= fim:
+        ate = min(fim, atual + timedelta(days=dias - 1))
+        yield atual, ate
+        atual = ate + timedelta(days=1)
 
 
 def to_decimal(v: Any) -> Decimal:

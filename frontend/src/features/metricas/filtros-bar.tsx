@@ -4,7 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PLATAFORMA_LABEL, type Plataforma } from "@/lib/format";
+import { PLATAFORMA_LABEL, PLATAFORMAS, type Plataforma } from "@/lib/format";
 import type { Schemas } from "@/services/api/client";
 
 import type { Filtros, Granularidade } from "./api";
@@ -46,8 +46,9 @@ export function FiltrosBar({
           <SelectTrigger className="w-40" aria-labelledby="f-plat"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value={TODAS}>Todas</SelectItem>
-            <SelectItem value="meta_ads">{PLATAFORMA_LABEL.meta_ads}</SelectItem>
-            <SelectItem value="google_ads">{PLATAFORMA_LABEL.google_ads}</SelectItem>
+            {PLATAFORMAS.map((p) => (
+              <SelectItem key={p} value={p}>{PLATAFORMA_LABEL[p]}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

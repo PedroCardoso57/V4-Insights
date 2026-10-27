@@ -87,7 +87,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <strong>V4 Insights</strong> — Plataforma Interna de Inteligência de Marketing · Unidade{" "}
             <strong>V4 Bounnacorso</strong>
           </span>
-          <span className="font-mono-num">Fontes: Meta Ads &amp; Google Ads · uso exclusivo de colaboradores</span>
+          <span className="font-mono-num">Fontes: Meta, Google, LinkedIn &amp; TikTok Ads · uso exclusivo de colaboradores</span>
         </footer>
       </div>
     </div>

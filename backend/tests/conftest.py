@@ -23,4 +23,8 @@ os.environ["FRONTEND_URL"] = "http://localhost:5173"
 os.environ["API_BASE_URL"] = "http://testserver"
 os.environ["META_APP_ID"] = "meta-app"
 os.environ["META_APP_SECRET"] = "meta-secret"
+os.environ["LINKEDIN_CLIENT_ID"] = "linkedin-app"
+os.environ["LINKEDIN_CLIENT_SECRET"] = "linkedin-secret"
+os.environ["TIKTOK_APP_ID"] = "tiktok-app"
+os.environ["TIKTOK_APP_SECRET"] = "tiktok-secret"
 os.environ["REPORTS_STORAGE_DIR"] = tempfile.mkdtemp(prefix="v4-relatorios-")

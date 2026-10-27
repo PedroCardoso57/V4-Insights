@@ -54,6 +54,16 @@ class Settings(BaseSettings):
     google_ads_login_customer_id: str | None = None
     google_ads_api_version: str = "v18"
 
+    # LinkedIn Marketing API (app com o produto Advertising API aprovado)
+    linkedin_client_id: str | None = None
+    linkedin_client_secret: str | None = None
+    linkedin_api_version: str = "202410"  # cabeçalho LinkedIn-Version (AAAAMM)
+
+    # TikTok Business API (Marketing API)
+    tiktok_app_id: str | None = None
+    tiktok_app_secret: str | None = None
+    tiktok_api_version: str = "v1.3"
+
     # Sincronização
     sync_interval_hours: int = 6
     sync_history_days_default: int = 90
@@ -146,6 +156,14 @@ class Settings(BaseSettings):
             and self.google_ads_client_secret
             and self.google_ads_developer_token
         )
+
+    @property
+    def linkedin_enabled(self) -> bool:
+        return bool(self.linkedin_client_id and self.linkedin_client_secret)
+
+    @property
+    def tiktok_enabled(self) -> bool:
+        return bool(self.tiktok_app_id and self.tiktok_app_secret)
 
 
 @lru_cache
