@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import base64
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, field_validator, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -62,7 +62,8 @@ class Settings(BaseSettings):
 
     # Rotação da chave de criptografia: chaves antigas (separadas por vírgula) só para
     # decifrar; `python -m app.cli rotacionar-chave` recifra tudo com ENCRYPTION_KEY.
-    encryption_keys_previous: list[str] = Field(default_factory=list)
+    # NoDecode: lista separada por vírgula (o _split_keys trata), não JSON; vazio vira [].
+    encryption_keys_previous: Annotated[list[str], NoDecode] = Field(default_factory=list)
 
     # Rate limit (SPEC-07): "<requisições>/<segundos>"; vazio desativa.
     rate_limit_login: str = "20/60"
