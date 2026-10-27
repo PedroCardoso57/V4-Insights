@@ -58,3 +58,16 @@ def test_politica_de_senha() -> None:
         with pytest.raises(senhas.SenhaFraca):
             senhas.validar_politica(ruim, "maria.silva@v4.com")
     senhas.validar_politica("frase longa e boa", "maria.silva@v4.com")
+
+
+@pytest.mark.parametrize(("valor", "esperado"), [("", 0), ("CHAVE", 1), ("CHAVE, CHAVE", 2)])
+def test_encryption_keys_previous_aceita_vazio_e_lista(
+    monkeypatch: pytest.MonkeyPatch, valor: str, esperado: int
+) -> None:
+    # O .env.example traz ENCRYPTION_KEYS_PREVIOUS= vazio; isso não pode derrubar a aplicação.
+    from app.core.config import Settings
+
+    chave = Fernet.generate_key().decode()
+    monkeypatch.setenv("ENCRYPTION_KEY", chave)
+    monkeypatch.setenv("ENCRYPTION_KEYS_PREVIOUS", valor.replace("CHAVE", chave))
+    assert len(Settings().encryption_keys_previous) == esperado

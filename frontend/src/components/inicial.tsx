@@ -6,7 +6,7 @@ export function Inicial({ nome, className }: { nome: string; className?: string 
     <span
       aria-hidden
       className={cn(
-        "flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary-border bg-primary-soft text-xs font-bold text-primary",
+        "flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary-border bg-primary-soft text-xs font-bold text-primary-ink",
         className,
       )}
     >

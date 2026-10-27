@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { SeloV4 } from "@/components/marca/simbolo-v4";
 import { useAlertasIntegracao } from "@/features/integracoes/alertas";
 import { useClienteAtual } from "@/hooks/use-cliente-atual";
 import { useLogout, useMe } from "@/hooks/use-me";
@@ -40,12 +41,7 @@ function itemAtivo(label: string, href: string, path: string): boolean {
 export function Marca({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <Link href="/" onClick={onNavigate} className="flex items-center gap-3 rounded-lg text-left">
-      <span
-        aria-hidden
-        className="flex size-9 items-center justify-center rounded-xl bg-primary text-sm font-extrabold tracking-tighter text-white shadow-xs"
-      >
-        V4
-      </span>
+      <SeloV4 className="size-9 rounded-xl shadow-[0_0_18px_var(--brand-glow)]" />
       <span>
         <strong className="block text-sm leading-none font-bold tracking-tight text-foreground">V4 Insights</strong>
         <span className="mt-1 block text-[11px] text-muted-foreground">V4 Bounnacorso</span>
@@ -96,7 +92,7 @@ export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
                   aria-current={ativo ? "page" : undefined}
                   className={cn(
                     "flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-text-secondary transition-colors hover:bg-subtle hover:text-foreground",
-                    ativo && "bg-primary-soft font-semibold text-primary hover:bg-primary-soft hover:text-primary",
+                    ativo && "bg-primary-soft font-semibold text-primary-ink hover:bg-primary-soft hover:text-primary-ink",
                   )}
                 >
                   <span className="flex items-center gap-3">
@@ -133,7 +129,7 @@ export function Usuario() {
       <div className="flex min-w-0 items-center gap-2.5">
         <span
           aria-hidden
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#1f242d] text-xs font-bold text-white dark:bg-[#323946]"
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#1f242d] text-xs font-bold text-white dark:bg-[#3d2830]"
         >
           {iniciais(me.nome)}
         </span>

@@ -44,7 +44,7 @@ export function SerieChart({ serie, kpi, moeda = "BRL" }: { serie: Schemas["Seri
           <Tooltip
             formatter={(v) => fmtKpi(kpi, v as number, moeda)}
             contentStyle={{
-              background: "#14161a",
+              background: "#110c10",
               border: "1px solid rgba(255,255,255,0.1)",
               borderRadius: 10,
               color: "#fff",

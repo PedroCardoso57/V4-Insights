@@ -7,6 +7,7 @@ import { useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { SeloV4 } from "@/components/marca/simbolo-v4";
 import { useLoginSenha } from "@/features/auth/api";
 import { ApiError, loginUrl } from "@/services/api/client";
 
@@ -18,7 +19,7 @@ const schema = z.object({
 type Form = z.infer<typeof schema>;
 
 const CAMPO =
-  "h-10 w-full rounded-xl border border-white/15 bg-white/5 px-3.5 text-[13px] text-white transition-all placeholder:text-white/35 focus:border-[#e5484d] focus:outline-none focus:ring-2 focus:ring-[#e5484d]/30 aria-invalid:border-rose-400";
+  "h-10 w-full rounded-xl border border-white/15 bg-white/5 px-3.5 text-[13px] text-white transition-all placeholder:text-white/35 focus:border-[#e50914] focus:outline-none focus:ring-2 focus:ring-[#e50914]/30 aria-invalid:border-rose-400";
 
 function mensagemLogin(e: unknown): string {
   if (e instanceof ApiError && e.status === 429) return "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
@@ -89,16 +90,11 @@ export function LoginCard() {
   return (
     <section
       aria-labelledby="titulo-login"
-      className="relative z-10 w-full max-w-[430px] rounded-2xl border border-white/15 bg-[#111318]/90 p-7 text-white shadow-[0_32px_90px_rgba(0,0,0,0.75)] backdrop-blur-xl sm:p-8"
+      className="relative z-10 w-full max-w-[430px] rounded-2xl border border-white/15 bg-[#0f0a0e]/90 p-7 text-white shadow-[0_32px_90px_rgba(0,0,0,0.75)] backdrop-blur-xl sm:p-8"
     >
       <div className="mb-6 flex items-center justify-between gap-3 border-b border-white/10 pb-5">
         <div className="flex items-center gap-3">
-          <span
-            aria-hidden
-            className="flex size-10 items-center justify-center rounded-xl bg-[#e5484d] text-base font-extrabold tracking-tighter shadow-[0_0_24px_rgba(229,72,77,0.55)]"
-          >
-            V4
-          </span>
+          <SeloV4 className="size-10 rounded-xl shadow-[0_0_24px_rgba(229,9,20,0.55)]" />
           <div>
             <strong className="block text-base font-bold tracking-tight">V4 Insights</strong>
             <span className="mt-0.5 block text-xs text-white/60">Unidade V4 Bounnacorso</span>
@@ -111,7 +107,7 @@ export function LoginCard() {
       </div>
 
       <div className="mb-6">
-        <span className="text-[11px] font-semibold tracking-widest text-[#f87171] uppercase">
+        <span className="text-[11px] font-semibold tracking-widest text-[#ff4d55] uppercase">
           Inteligência de Mídia &amp; Performance
         </span>
         <h1 id="titulo-login" className="mt-1 text-2xl font-bold tracking-tight">
@@ -141,7 +137,7 @@ export function LoginCard() {
 
       <a
         href={loginUrl()}
-        className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl bg-white text-[13px] font-semibold text-[#14161a] shadow-md transition-colors hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e5484d]"
+        className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl bg-white text-[13px] font-semibold text-[#14161a] shadow-md transition-colors hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e50914]"
       >
         <LogoGoogle />
         Entrar com Google Workspace
@@ -191,17 +187,17 @@ export function LoginCard() {
         )}
         <div className="flex items-center justify-between gap-2 pt-0.5 text-[11px] text-white/65">
           <label className="inline-flex cursor-pointer items-center gap-2">
-            <input type="checkbox" className="size-3.5 rounded accent-[#e5484d]" {...register("manter")} />
+            <input type="checkbox" className="size-3.5 rounded accent-[#e50914]" {...register("manter")} />
             Manter sessão ativa
           </label>
-          <button type="button" onClick={() => setEsqueci(true)} className="cursor-pointer text-[#f87171] hover:underline">
+          <button type="button" onClick={() => setEsqueci(true)} className="cursor-pointer text-[#ff4d55] hover:underline">
             Esqueci minha senha
           </button>
         </div>
         <button
           type="submit"
           disabled={login.isPending}
-          className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#e5484d] text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(229,72,77,0.4)] transition-colors hover:bg-[#dc2626] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-60"
+          className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#e50914] text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(229,9,20,0.4)] transition-colors hover:bg-[#c40812] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-60"
         >
           {login.isPending ? (
             <>

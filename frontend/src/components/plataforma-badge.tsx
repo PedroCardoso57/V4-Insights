@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 const TOM: Record<Plataforma, { fundo: string; ponto: string }> = {
   meta_ads: { fundo: "bg-info-soft text-info", ponto: "bg-info" },
-  google_ads: { fundo: "bg-primary-soft text-primary", ponto: "bg-primary" },
+  google_ads: { fundo: "bg-primary-soft text-primary-ink", ponto: "bg-primary" },
   linkedin_ads: { fundo: "bg-success-soft text-success", ponto: "bg-success" },
   tiktok_ads: { fundo: "bg-secondary text-foreground", ponto: "bg-foreground" },
 };

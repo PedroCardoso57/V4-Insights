@@ -4,8 +4,10 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Design system V4 Insights (protótipo Figma): superfícies neutras, acento vermelho V4,
-   tons semânticos com versão "soft" para badges e alertas. */
+/* Design system V4 Insights: identidade da V4 Company (vermelho oficial #E50914, base quase
+   preta com brilho vermelho, cards escuros de borda avermelhada), tons semânticos com versão
+   "soft" para badges e alertas. --brand é o vermelho exato da marca (preenchimentos, símbolo);
+   --brand-ink é o mesmo matiz ajustado para texto legível sobre cada fundo. */
 :root {
   --radius: 0.625rem;
 
@@ -19,10 +21,12 @@
   --faint: #98a2b3;
   --line: #e5e7eb;
   --line-strong: #d0d5dd;
-  --brand: #e5484d;
-  --brand-hover: #dc2626;
-  --brand-soft: #fff1f2;
-  --brand-border: #fecdd3;
+  --brand: #e50914;
+  --brand-hover: #c40812;
+  --brand-ink: #c8101a;
+  --brand-soft: #fff1f1;
+  --brand-border: #fcc8ca;
+  --brand-glow: rgba(229, 9, 20, 0.25);
   --blue: #2563eb;
   --blue-soft: #eff6ff;
   --green: #15803d;
@@ -38,20 +42,22 @@
 }
 
 .dark {
-  --bg: #0b0d11;
-  --surface: #12151b;
-  --surface-subtle: #181c24;
-  --surface-elevated: #1d222c;
-  --text: #f3f4f6;
-  --text-secondary: #d1d5db;
-  --text-muted: #9ca3af;
-  --faint: #6b7280;
-  --line: #222731;
-  --line-strong: #323946;
-  --brand: #e5484d;
-  --brand-hover: #f2555a;
-  --brand-soft: rgba(229, 72, 77, 0.12);
-  --brand-border: rgba(229, 72, 77, 0.3);
+  --bg: #09060b;
+  --surface: #110c10;
+  --surface-subtle: #1a1217;
+  --surface-elevated: #1f161b;
+  --text: #f5f3f4;
+  --text-secondary: #d6d0d3;
+  --text-muted: #a69ca1;
+  --faint: #75696f;
+  --line: #2a1c22;
+  --line-strong: #3d2830;
+  --brand: #e50914;
+  --brand-hover: #ff1f2b;
+  --brand-ink: #ff4d55;
+  --brand-soft: rgba(229, 9, 20, 0.14);
+  --brand-border: rgba(229, 9, 20, 0.45);
+  --brand-glow: rgba(229, 9, 20, 0.45);
   --blue: #3b82f6;
   --blue-soft: rgba(59, 130, 246, 0.12);
   --green: #22c55e;
@@ -92,6 +98,7 @@
   --color-primary: var(--brand);
   --color-primary-hover: var(--brand-hover);
   --color-primary-foreground: #ffffff;
+  --color-primary-ink: var(--brand-ink);
   --color-primary-soft: var(--brand-soft);
   --color-primary-border: var(--brand-border);
   --color-secondary: var(--surface-subtle);
@@ -132,6 +139,13 @@
   body {
     @apply bg-background font-sans text-foreground antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  /* Brilho vermelho nos cantos, como nos materiais da V4 (só no tema escuro). */
+  .dark body {
+    background-image:
+      radial-gradient(60rem 40rem at 100% -10%, rgba(229, 9, 20, 0.16), transparent 60%),
+      radial-gradient(40rem 30rem at -10% 110%, rgba(229, 9, 20, 0.1), transparent 60%);
+    background-attachment: fixed;
   }
   /* Foco sempre visível para navegação por teclado. */
   :focus-visible {
