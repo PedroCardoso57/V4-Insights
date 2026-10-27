@@ -94,7 +94,7 @@ export default function InicioPage() {
                 <Indicador
                   rotulo="Alertas"
                   dica="Integrações com erro, sem contas ou sem sincronizar há mais de 24 horas"
-                  valor={<span className={alertas.length ? "text-primary" : undefined}>{fmtNumero(alertas.length)}</span>}
+                  valor={<span className={alertas.length ? "text-primary-ink" : undefined}>{fmtNumero(alertas.length)}</span>}
                   rodape={alertas.length ? "exigem atenção" : "nenhuma pendência"}
                 />
               </>
