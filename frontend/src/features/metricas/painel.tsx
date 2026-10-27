@@ -45,7 +45,7 @@ export function PainelCliente({ clienteId, inicial }: { clienteId: string; inici
         vazio={() =>
           semIntegracao && (
             <Vazio titulo="Nenhuma integração conectada">
-              Conecte Meta Ads ou Google Ads em Integrações para ver os indicadores deste cliente.
+              Conecte Meta Ads, Google Ads, LinkedIn Ads ou TikTok Ads em Integrações para ver os indicadores deste cliente.
             </Vazio>
           )
         }

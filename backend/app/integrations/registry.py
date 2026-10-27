@@ -11,9 +11,16 @@ _factories: dict[str, Callable[[], AdsProvider]] = {}
 
 def _defaults() -> dict[str, Callable[[], Any]]:
     from app.integrations.google_ads import GoogleAdsProvider
+    from app.integrations.linkedin import LinkedInProvider
     from app.integrations.meta import MetaProvider
+    from app.integrations.tiktok import TikTokProvider
 
-    return {Plataforma.meta_ads.value: MetaProvider, Plataforma.google_ads.value: GoogleAdsProvider}
+    return {
+        Plataforma.meta_ads.value: MetaProvider,
+        Plataforma.google_ads.value: GoogleAdsProvider,
+        Plataforma.linkedin_ads.value: LinkedInProvider,
+        Plataforma.tiktok_ads.value: TikTokProvider,
+    }
 
 
 def get_provider(plataforma: str) -> AdsProvider:
@@ -33,7 +40,11 @@ def override_provider(plataforma: str, factory: Callable[[], AdsProvider] | None
 
 def mapeamento_padrao(plataforma: str) -> dict[str, Any]:
     # Google Ads: conversões primárias configuradas na própria conta são o mapeamento
-    # explícito inicial. Meta: nenhum até que o analista escolha os action_types.
-    if plataforma == Plataforma.google_ads.value:
-        return {"action_types": ["conversions"]}
-    return {}
+    # explícito inicial; LinkedIn e TikTok têm uma métrica de conversão principal da conta.
+    # Meta: nenhum até que o analista escolha os action_types.
+    padrao = {
+        Plataforma.google_ads.value: ["conversions"],
+        Plataforma.linkedin_ads.value: ["external_website_conversions"],
+        Plataforma.tiktok_ads.value: ["conversion"],
+    }
+    return {"action_types": padrao[plataforma]} if plataforma in padrao else {}

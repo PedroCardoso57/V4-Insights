@@ -59,7 +59,12 @@ GRAFICO = {
     "serie_cliques": ("cliques", "Cliques por período"),
     "serie_conversoes": ("conversoes", "Conversões por período"),
 }
-PLATAFORMA = {"meta_ads": "Meta Ads", "google_ads": "Google Ads"}
+PLATAFORMA = {
+    "meta_ads": "Meta Ads",
+    "google_ads": "Google Ads",
+    "linkedin_ads": "LinkedIn Ads",
+    "tiktok_ads": "TikTok Ads",
+}
 
 
 def _num(v: Any, casas: int = 2) -> str:

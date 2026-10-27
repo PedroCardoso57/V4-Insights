@@ -1288,7 +1288,7 @@ export interface components {
          * Plataforma
          * @enum {string}
          */
-        Plataforma: "meta_ads" | "google_ads";
+        Plataforma: "meta_ads" | "google_ads" | "linkedin_ads" | "tiktok_ads";
         /** PontoSerie */
         PontoSerie: {
             kpis: components["schemas"]["Kpis"];
@@ -4023,6 +4023,7 @@ export interface operations {
             query?: {
                 state?: string | null;
                 code?: string | null;
+                auth_code?: string | null;
                 error?: string | null;
             };
             header?: never;

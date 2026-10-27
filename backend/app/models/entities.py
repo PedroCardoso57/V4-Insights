@@ -52,6 +52,8 @@ class StatusCliente(enum.StrEnum):
 class Plataforma(enum.StrEnum):
     meta_ads = "meta_ads"
     google_ads = "google_ads"
+    linkedin_ads = "linkedin_ads"
+    tiktok_ads = "tiktok_ads"
 
 
 class StatusIntegracao(enum.StrEnum):
@@ -404,7 +406,7 @@ class OAuthState(Base):
     __tablename__ = "oauth_states"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)  # sha256(state)
-    finalidade: Mapped[str] = mapped_column(String(32))  # login | meta_ads | google_ads
+    finalidade: Mapped[str] = mapped_column(String(32))  # login | <plataforma>
     nonce: Mapped[str | None] = mapped_column(String(128))
     code_verifier: Mapped[str | None] = mapped_column(String(128))
     usuario_id: Mapped[uuid.UUID | None] = mapped_column(

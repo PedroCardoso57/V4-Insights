@@ -285,3 +285,38 @@ def test_logs_nao_expoem_segredos(cenario, fake, enfileirados, caplog) -> None:
         )
         _executar(enfileirados)
     assert TOKEN_SECRETO not in caplog.text
+
+
+def test_conexao_tiktok_aceita_auth_code(factory, db) -> None:  # type: ignore[no-untyped-def]
+    p = FakeProvider()
+    registry.override_provider("tiktok_ads", lambda: p)
+    try:
+        u = factory.usuario("analista")
+        c = factory.cliente("Cliente", membros=(u,))
+        cli = factory.login(u)
+        r = cli.post("/integracoes/tiktok_ads/autorizar", json={"cliente_id": str(c.id)})
+        assert r.status_code == 200, r.text
+        state = parse_qs(urlsplit(r.json()["authorization_url"]).query)["state"][0]
+        r = cli.get(
+            f"/integracoes/tiktok_ads/callback?state={state}&auth_code=abc",
+            follow_redirects=False,
+        )
+        assert r.status_code == 302, r.text
+        iid = parse_qs(urlsplit(r.headers["location"]).query)["integracao"][0]
+        assert db.get(Integracao, iid).plataforma == "tiktok_ads"
+    finally:
+        registry.override_provider("tiktok_ads", None)
+
+
+@pytest.mark.parametrize("plataforma", ["linkedin_ads", "tiktok_ads"])
+def test_autorizar_novas_plataformas_usa_provedor_real(factory, plataforma) -> None:  # type: ignore[no-untyped-def]
+    u = factory.usuario("analista")
+    c = factory.cliente("Cliente", membros=(u,))
+    r = factory.login(u).post(
+        f"/integracoes/{plataforma}/autorizar", json={"cliente_id": str(c.id)}
+    )
+    assert r.status_code == 200, r.text
+    url = r.json()["authorization_url"]
+    q = parse_qs(urlsplit(url).query)
+    assert q["redirect_uri"] == [f"http://testserver/api/v1/integracoes/{plataforma}/callback"]
+    assert q["state"]

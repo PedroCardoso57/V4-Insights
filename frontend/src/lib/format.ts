@@ -74,7 +74,15 @@ export const PAPEL_LABEL: Record<Papel, string> = {
   visualizador: "Visualizador",
 };
 
-export const PLATAFORMA_LABEL: Record<Plataforma, string> = { meta_ads: "Meta Ads", google_ads: "Google Ads" };
+export const PLATAFORMA_LABEL: Record<Plataforma, string> = {
+  meta_ads: "Meta Ads",
+  google_ads: "Google Ads",
+  linkedin_ads: "LinkedIn Ads",
+  tiktok_ads: "TikTok Ads",
+};
+
+/** Ordem de exibição das plataformas de mídia em filtros, conectores e relatórios. */
+export const PLATAFORMAS = ["meta_ads", "google_ads", "linkedin_ads", "tiktok_ads"] as const satisfies readonly Plataforma[];
 
 export function isoHoje(offsetDias = 0): string {
   const d = new Date();

@@ -68,6 +68,17 @@ test("conexão: iniciar autorização Meta leva ao provedor", async ({ page }) =
   expect(st.autorizacoes).toEqual(["meta_ads"]);
 });
 
+for (const [nome, plataforma] of [["LinkedIn Ads", "linkedin_ads"], ["TikTok Ads", "tiktok_ads"]] as const) {
+  test(`conexão: iniciar autorização ${nome} leva ao provedor`, async ({ page }) => {
+    const st = novoEstado("analista");
+    await instalarApi(page, st);
+    await page.goto(`/clientes/${CLIENTE}?aba=integracoes`);
+    await page.getByRole("button", { name: `Conectar ${nome}` }).click();
+    await expect(page.getByRole("heading", { name: "Tela de consentimento do provedor" })).toBeVisible();
+    expect(st.autorizacoes).toEqual([plataforma]);
+  });
+}
+
 test("dashboard: filtro de plataforma altera cards e tabela juntos", async ({ page }) => {
   await instalarApi(page, novoEstado("analista"));
   await page.goto(`/clientes/${CLIENTE}/dashboards`);

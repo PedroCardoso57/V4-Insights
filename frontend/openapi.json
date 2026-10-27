@@ -1702,7 +1702,9 @@
       "Plataforma": {
         "enum": [
           "meta_ads",
-          "google_ads"
+          "google_ads",
+          "linkedin_ads",
+          "tiktok_ads"
         ],
         "title": "Plataforma",
         "type": "string"
@@ -6022,6 +6024,22 @@
                 }
               ],
               "title": "Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "auth_code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Code"
             }
           },
           {

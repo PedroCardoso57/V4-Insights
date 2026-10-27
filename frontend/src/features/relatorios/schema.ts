@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { PLATAFORMAS } from "@/lib/format";
+
 export const KPIS = ["investimento", "impressoes", "cliques", "ctr", "cpc", "cpm", "conversoes", "valor_conversoes", "cpa", "roas"] as const;
 export const GRAFICOS = ["serie_investimento", "serie_cliques", "serie_conversoes", "tabela_campanhas"] as const;
 export const GRAFICO_LABEL: Record<(typeof GRAFICOS)[number], string> = {
@@ -26,7 +28,7 @@ export const relatorioSchema = z
     periodo_tipo: z.enum(["ultimos_7_dias", "ultimos_30_dias", "mes_atual", "mes_anterior", "personalizado"]),
     inicio: z.string().optional(),
     fim: z.string().optional(),
-    plataformas: z.array(z.enum(["meta_ads", "google_ads"])),
+    plataformas: z.array(z.enum(PLATAFORMAS)),
     kpis: z.array(z.enum(KPIS)).min(1, "Selecione ao menos um KPI"),
     graficos: z.array(z.enum(GRAFICOS)),
     granularidade: z.enum(["dia", "semana", "mes"]),

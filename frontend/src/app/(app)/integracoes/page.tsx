@@ -33,7 +33,7 @@ export default function IntegracoesPage() {
     <>
       <PageHeader
         titulo="Integrações e conectores de mídia"
-        descricao="Conexões OAuth com Meta Ads e Google Ads: contas selecionadas, status de sincronização e reprocessamento."
+        descricao="Conexões OAuth com Meta Ads, Google Ads, LinkedIn Ads e TikTok Ads: contas selecionadas, status de sincronização e reprocessamento."
         acoes={
           <Select value={clienteId ?? TODOS} onValueChange={(v) => router.replace(v === TODOS ? "/integracoes" : `/integracoes?cliente_id=${v}`)}>
             <SelectTrigger className="w-64" aria-label="Filtrar por cliente"><SelectValue /></SelectTrigger>

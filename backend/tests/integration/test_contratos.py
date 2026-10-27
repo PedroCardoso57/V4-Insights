@@ -94,6 +94,11 @@ def test_openapi_documenta_erros_e_enums(anon) -> None:
     assert "/api/v1/relatorios/{relatorio_id}/gerar" in spec["paths"]
     schemas = spec["components"]["schemas"]
     assert "ErrorResponse" in schemas
-    assert set(schemas["Plataforma"]["enum"]) == {"meta_ads", "google_ads"}
+    assert set(schemas["Plataforma"]["enum"]) == {
+        "meta_ads",
+        "google_ads",
+        "linkedin_ads",
+        "tiktok_ads",
+    }
     get_cli = spec["paths"]["/api/v1/clientes"]["get"]
     assert "403" in get_cli["responses"] and "422" in get_cli["responses"]
