@@ -86,6 +86,6 @@ touch /var/log/v4-backup.log /var/log/v4-monitor.log
 chown "$DEPLOY_USER" /var/log/v4-backup.log /var/log/v4-monitor.log
 
 echo "Provisionamento concluído. Próximos passos (como $DEPLOY_USER):"
-echo "  git clone <repo> $APP_DIR && cd $APP_DIR && cp .env.example .env  # preencher"
+echo "  git clone <repo> $APP_DIR && cd $APP_DIR && bash infra/vps/configurar-env.sh <dominio>"
 echo "  docker compose up --build -d && docker compose run --rm api python -m app.cli criar-admin ..."
 echo "  Copie /etc/v4insights/backup.pass para o cofre da equipe."
