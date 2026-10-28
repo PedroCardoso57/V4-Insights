@@ -12,6 +12,9 @@ from app.core.chaves import config_efetiva
 from app.core.config import get_settings
 from app.core.urls import UrlNaoPermitida, exigir_url_permitida
 from app.integrations.base import (
+    DICA_CONFIGURACAO as DICA,
+)
+from app.integrations.base import (
     ConfigProviderError,
     ExternalAccount,
     MetricRow,
@@ -43,7 +46,7 @@ class MetaProvider:
     def __init__(self) -> None:
         s = config_efetiva()
         if not s.meta_enabled:
-            raise ConfigProviderError("Meta não configurado (META_APP_ID/META_APP_SECRET)")
+            raise ConfigProviderError(f"Meta Ads não configurado: {DICA}")
         self.app_id = s.meta_app_id or ""
         self.app_secret = s.meta_app_secret or ""
         self.base = f"https://graph.facebook.com/{s.meta_graph_version}"

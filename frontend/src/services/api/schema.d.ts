@@ -1172,6 +1172,11 @@ export interface components {
             nome: string;
             papel: components["schemas"]["Papel"];
             /**
+             * Responsavel Chaves
+             * @default false
+             */
+            responsavel_chaves: boolean;
+            /**
              * Tem Senha
              * @default false
              */

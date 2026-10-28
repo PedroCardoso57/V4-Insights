@@ -1338,6 +1338,11 @@
           "papel": {
             "$ref": "#/components/schemas/Papel"
           },
+          "responsavel_chaves": {
+            "default": false,
+            "title": "Responsavel Chaves",
+            "type": "boolean"
+          },
           "tem_senha": {
             "default": false,
             "title": "Tem Senha",

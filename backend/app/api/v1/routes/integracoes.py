@@ -70,7 +70,8 @@ def _provider(plataforma: str) -> AdsProvider:
     try:
         return get_provider(plataforma)
     except ConfigProviderError as exc:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
+        # Código próprio: a tela abre o cadastro das chaves da plataforma.
+        raise AppError(503, str(exc), "PROVIDER_NOT_CONFIGURED") from exc
 
 
 def _erro_provedor(exc: ProviderError) -> AppError:

@@ -144,13 +144,35 @@ def config_efetiva() -> Settings:
     return base.model_copy(update=valores) if valores else base
 
 
-def salvar(db: Session, valores: dict[str, str | None], usuario_id: uuid.UUID) -> list[str]:
+class AlteracaoNaoPermitida(PermissionError):
+    pass
+
+
+def eh_responsavel(email: str) -> bool:
+    """Conta que vê e altera todas as chaves (CHAVES_RESPONSAVEIS_EMAILS)."""
+    return email.strip().lower() in get_settings().chaves_responsaveis_emails
+
+
+def salvar(
+    db: Session,
+    valores: dict[str, str | None],
+    usuario_id: uuid.UUID,
+    *,
+    so_vazias: bool = False,
+) -> list[str]:
     """Grava (texto) ou remove (vazio/None → volta a valer o `.env`). Devolve as chaves
-    alteradas. O chamador faz o commit e chama `limpar_cache()`."""
-    alteradas: list[str] = []
-    for chave, valor in valores.items():
+    alteradas. Com `so_vazias`, só preenche chaves sem valor (nem no banco nem no `.env`).
+    O chamador faz o commit e chama `limpar_cache()`."""
+    for chave in valores:
         if chave not in CAMPOS:
             raise KeyError(chave)
+    if so_vazias:
+        efetiva = config_efetiva()
+        ocupadas = [c for c in valores if getattr(efetiva, c, None)]
+        if ocupadas:
+            raise AlteracaoNaoPermitida(", ".join(CAMPOS[c].rotulo for c in ocupadas))
+    alteradas: list[str] = []
+    for chave, valor in valores.items():
         atual = db.get(ChavePlataforma, chave)
         valor = (valor or "").strip()
         if not valor:

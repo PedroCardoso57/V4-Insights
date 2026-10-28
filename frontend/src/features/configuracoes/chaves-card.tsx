@@ -36,16 +36,27 @@ function Copiar({ texto }: { texto: string }) {
   );
 }
 
-function Grupo({ grupo }: { grupo: GrupoChaves }) {
+/** Formulário das chaves de uma plataforma (card de Configurações e modal de Conectar). */
+export function GrupoChavesForm({
+  grupo,
+  onSalvo,
+  restrito,
+}: {
+  grupo: GrupoChaves;
+  onSalvo?: (grupos: GrupoChaves[]) => void;
+  /** Só preenche chaves vazias: as já cadastradas ficam bloqueadas (só o responsável troca). */
+  restrito?: boolean;
+}) {
   const salvar = useSalvarChaves();
   const [rascunho, setRascunho] = useState<Record<string, string>>({});
   const alterado = Object.keys(rascunho).length > 0;
 
   const enviar = (valores: Record<string, string | null>, msg: string) =>
     salvar.mutate(valores, {
-      onSuccess: () => {
+      onSuccess: (grupos) => {
         setRascunho({});
         toast.success(msg);
+        onSalvo?.(grupos);
       },
       onError: (e) => toast.error(mensagemDeErro(e)),
     });
@@ -72,7 +83,10 @@ function Grupo({ grupo }: { grupo: GrupoChaves }) {
       </div>
       {grupo.campos.map((c) => {
         const id = `chave-${c.chave}`;
-        const dica = [c.origem ? ORIGEM[c.origem] : "Não informada", !c.obrigatorio && "opcional"].filter(Boolean).join(" · ");
+        const bloqueado = restrito && !!c.origem;
+        const dica = bloqueado
+          ? "Já cadastrada"
+          : [c.origem ? ORIGEM[c.origem] : "Não informada", !c.obrigatorio && "opcional"].filter(Boolean).join(" · ");
         return (
           <Field key={c.chave} id={id} label={c.rotulo} hint={dica}>
             {(a) => (
@@ -83,11 +97,12 @@ function Grupo({ grupo }: { grupo: GrupoChaves }) {
                   autoComplete="off"
                   spellCheck={false}
                   maxLength={500}
+                  disabled={bloqueado}
                   placeholder={c.secreto && c.origem ? "•••••••• (deixe em branco para manter)" : undefined}
                   value={rascunho[c.chave] ?? (c.secreto ? "" : (c.valor ?? ""))}
                   onChange={(e) => setRascunho({ ...rascunho, [c.chave]: e.target.value })}
                 />
-                {c.origem === "sistema" && (
+                {c.origem === "sistema" && !restrito && (
                   <Button
                     type="button"
                     variant="ghost"
@@ -113,7 +128,7 @@ function Grupo({ grupo }: { grupo: GrupoChaves }) {
   );
 }
 
-/** Chaves dos apps das plataformas (somente admin). Têm prioridade sobre o `.env`. */
+/** Chaves dos apps das plataformas (só o responsável pelas chaves). Têm prioridade sobre o `.env`. */
 export function ChavesCard() {
   const q = useChaves();
   return (
@@ -129,7 +144,7 @@ export function ChavesCard() {
         <Consulta query={q}>
           {(grupos) => (
             <div className="grid gap-4 lg:grid-cols-2">
-              {grupos.map((g) => <Grupo key={g.id} grupo={g} />)}
+              {grupos.map((g) => <GrupoChavesForm key={g.id} grupo={g} />)}
             </div>
           )}
         </Consulta>

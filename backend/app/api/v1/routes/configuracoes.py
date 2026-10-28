@@ -1,11 +1,15 @@
-"""Chaves dos apps das plataformas (Google, Meta, LinkedIn, TikTok), somente admin."""
+"""Chaves dos apps das plataformas (Google, Meta, LinkedIn, TikTok).
+
+Admin e gestor preenchem chaves ainda vazias (modal de Conectar). Ver e trocar chaves já
+cadastradas é só para as contas de CHAVES_RESPONSAVEIS_EMAILS (card de Configurações).
+"""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from app.api.deps import Principal, require_roles
+from app.api.deps import GERENCIA, Principal, require_roles
 from app.core import chaves
 from app.core.config import get_settings
 from app.db.session import get_db
@@ -49,7 +53,7 @@ def _grupos() -> list[GrupoChavesOut]:
 
 @router.get("/chaves", response_model=list[GrupoChavesOut])
 def listar_chaves(
-    principal: Principal = Depends(require_roles(Papel.admin)),
+    principal: Principal = Depends(require_roles(*GERENCIA)),
 ) -> list[GrupoChavesOut]:
     return _grupos()
 
@@ -58,13 +62,19 @@ def listar_chaves(
 def salvar_chaves(
     body: ChavesIn,
     request: Request,
-    principal: Principal = Depends(require_roles(Papel.admin)),
+    principal: Principal = Depends(require_roles(*GERENCIA)),
     db: Session = Depends(get_db),
 ) -> list[GrupoChavesOut]:
     """Grava as chaves informadas (cifradas). Valor vazio remove a chave cadastrada e volta a
     valer o `.env`. Os valores nunca são registrados na auditoria, só quais mudaram."""
+    responsavel = principal.papel is Papel.admin and chaves.eh_responsavel(principal.usuario.email)
     try:
-        alteradas = chaves.salvar(db, body.valores, principal.usuario.id)
+        alteradas = chaves.salvar(db, body.valores, principal.usuario.id, so_vazias=not responsavel)
+    except chaves.AlteracaoNaoPermitida as exc:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            f"Só o responsável pelas chaves pode alterar chaves já cadastradas: {exc}",
+        ) from exc
     except KeyError as exc:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY, f"Chave desconhecida: {exc}"

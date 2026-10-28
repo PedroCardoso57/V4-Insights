@@ -4,7 +4,8 @@ import type { Papel } from "@/lib/format";
 export const pode = {
   gerirClientes: (p?: Papel) => p === "admin" || p === "gestor",
   excluirClientes: (p?: Papel) => p === "admin",
-  gerirChaves: (p?: Papel) => p === "admin",
+  /** Preenche chaves ainda vazias pelo modal de Conectar (ver e trocar todas: responsável). */
+  gerirChaves: (p?: Papel) => p === "admin" || p === "gestor",
   gerirUsuarios: (p?: Papel) => p === "admin",
   verUsuarios: (p?: Papel) => p === "admin",
   editar: (p?: Papel) => p === "admin" || p === "gestor" || p === "analista",

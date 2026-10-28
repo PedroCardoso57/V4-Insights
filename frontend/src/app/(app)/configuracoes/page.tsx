@@ -16,7 +16,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMe } from "@/hooks/use-me";
 import { PAPEL_LABEL } from "@/lib/format";
-import { pode } from "@/lib/permissoes";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useTema } from "@/hooks/use-tema";
 import { cn } from "@/lib/utils";
@@ -42,7 +41,7 @@ export default function ConfiguracoesPage() {
 
   return (
     <>
-      <PageHeader titulo="Configurações" descricao="Preferências deste navegador, status operacional e chaves das plataformas." />
+      <PageHeader titulo="Configurações" descricao="Preferências deste navegador e status operacional da plataforma." />
       <div className="grid gap-5 lg:grid-cols-2">
         <Card className="lg:col-span-2">
           <CardHeader className="flex-col items-start">
@@ -137,7 +136,7 @@ export default function ConfiguracoesPage() {
             )}
           </CardContent>
         </Card>
-        {pode.gerirChaves(me?.papel) && <ChavesCard />}
+        {me?.responsavel_chaves && <ChavesCard />}
       </div>
     </>
   );

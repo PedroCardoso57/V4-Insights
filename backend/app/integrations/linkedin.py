@@ -16,6 +16,9 @@ from urllib.parse import quote, urlencode
 from app.core.chaves import config_efetiva
 from app.core.config import get_settings
 from app.integrations.base import (
+    DICA_CONFIGURACAO as DICA,
+)
+from app.integrations.base import (
     ConfigProviderError,
     ExternalAccount,
     MetricRow,
@@ -71,9 +74,7 @@ class LinkedInProvider:
     def __init__(self) -> None:
         s = config_efetiva()
         if not s.linkedin_enabled:
-            raise ConfigProviderError(
-                "LinkedIn não configurado (LINKEDIN_CLIENT_ID/LINKEDIN_CLIENT_SECRET)"
-            )
+            raise ConfigProviderError(f"LinkedIn Ads não configurado: {DICA}")
         self.client_id = s.linkedin_client_id or ""
         self.client_secret = s.linkedin_client_secret or ""
         self.version = s.linkedin_api_version

@@ -34,6 +34,9 @@ class PermissionProviderError(ProviderError):
     """Token revogado, escopo insuficiente, conta sem acesso: nunca repetir sozinho."""
 
 
+DICA_CONFIGURACAO = "cadastre as chaves em Configurações > Chaves das plataformas (ou no .env)"
+
+
 class ConfigProviderError(ProviderError):
     """Provedor não configurado neste ambiente."""
 

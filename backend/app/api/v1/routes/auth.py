@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import Principal, get_principal
 from app.api.errors import AppError
 from app.core import oidc, senhas
+from app.core.chaves import eh_responsavel
 from app.core.config import get_settings
 from app.core.crypto import random_token, sha256_hex
 from app.core.ratelimit import por_ip, regra, verificar
@@ -23,7 +24,7 @@ from app.core.sessions import (
     set_session_cookies,
 )
 from app.db.session import get_db
-from app.models import OAuthState, Sessao, Usuario
+from app.models import OAuthState, Papel, Sessao, Usuario
 from app.schemas import LoginSenhaIn, MeOut, TrocarSenhaIn
 from app.services.audit import registrar
 
@@ -259,7 +260,12 @@ def trocar_senha(
 def me(principal: Principal = Depends(get_principal)) -> MeOut:
     u = principal.usuario
     return MeOut(
-        id=u.id, nome=u.nome, email=u.email, papel=u.papel, tem_senha=u.senha_hash is not None
+        id=u.id,
+        nome=u.nome,
+        email=u.email,
+        papel=u.papel,
+        tem_senha=u.senha_hash is not None,
+        responsavel_chaves=principal.papel is Papel.admin and eh_responsavel(u.email),
     )
 
 

@@ -15,6 +15,9 @@ from urllib.parse import urlencode
 from app.core.chaves import config_efetiva
 from app.core.config import get_settings
 from app.integrations.base import (
+    DICA_CONFIGURACAO as DICA,
+)
+from app.integrations.base import (
     ConfigProviderError,
     ExternalAccount,
     MetricRow,
@@ -61,7 +64,7 @@ class TikTokProvider:
     def __init__(self) -> None:
         s = config_efetiva()
         if not s.tiktok_enabled:
-            raise ConfigProviderError("TikTok não configurado (TIKTOK_APP_ID/TIKTOK_APP_SECRET)")
+            raise ConfigProviderError(f"TikTok Ads não configurado: {DICA}")
         self.app_id = s.tiktok_app_id or ""
         self.secret = s.tiktok_app_secret or ""
         self.base = f"https://business-api.tiktok.com/open_api/{s.tiktok_api_version}"

@@ -47,6 +47,8 @@ class MeOut(BaseModel):
     email: str
     papel: Papel
     tem_senha: bool = False
+    # Vê e altera todas as chaves das plataformas (card de Configurações).
+    responsavel_chaves: bool = False
 
 
 class LoginSenhaIn(BaseModel):

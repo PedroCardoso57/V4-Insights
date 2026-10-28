@@ -18,6 +18,7 @@ export interface Estado {
   autorizacoes: string[];
   usuarios: Obj[];
   chaves: Record<string, string>;
+  responsavel: boolean;
 }
 
 export function novoEstado(papel: Papel | null = "admin"): Estado {
@@ -42,6 +43,7 @@ export function novoEstado(papel: Papel | null = "admin"): Estado {
       { id: "u2", nome: "Caio Reis", email: "caio@v4.com", papel: "analista", ativo: true, vinculado_google: false, tem_senha: true, ultimo_login_em: null, criado_em: agoraIso() },
     ],
     chaves: { google_oidc_client_id: "id-do-env", google_oidc_client_secret: "segredo-do-env" },
+    responsavel: false,
   };
 }
 
@@ -72,7 +74,7 @@ export async function instalarApi(page: Page, st: Estado) {
 
     if (p === "/auth/me") {
       if (!st.papel) return erro(route, 401, "UNAUTHENTICATED", "Sessão inválida ou expirada");
-      return json(route, { id: "u1", nome: "Ana Lima", email: "ana@v4.com", papel: st.papel });
+      return json(route, { id: "u1", nome: "Ana Lima", email: "ana@v4.com", papel: st.papel, responsavel_chaves: st.responsavel });
     }
     if (p === "/auth/logout") return route.fulfill({ status: 204 });
     if (p === "/auth/login" && m === "POST") {
@@ -137,6 +139,9 @@ export async function instalarApi(page: Page, st: Estado) {
       return json(route, page1(st.integracoes.filter((i) => !cid || i.cliente_id === cid)));
     }
     if (seg[0] === "integracoes" && seg[2] === "autorizar") {
+      if (seg[1] === "google_ads" && !st.chaves.google_ads_client_id) {
+        return erro(route, 503, "PROVIDER_NOT_CONFIGURED", "Google Ads não configurado: cadastre as chaves em Configurações");
+      }
       st.autorizacoes.push(seg[1]!);
       return json(route, { authorization_url: `${url.origin}/provedor-falso?plataforma=${seg[1]}` });
     }
@@ -175,7 +180,7 @@ export async function instalarApi(page: Page, st: Estado) {
     }
     // chaves das plataformas (Configurações, somente admin)
     if (p === "/configuracoes/chaves") {
-      if (st.papel !== "admin") return erro(route, 403, "FORBIDDEN", "Permissão insuficiente");
+      if (st.papel !== "admin" && st.papel !== "gestor") return erro(route, 403, "FORBIDDEN", "Permissão insuficiente");
       if (m === "PUT") {
         for (const [k, v] of Object.entries(body.valores as Record<string, string | null>)) {
           if (v) st.chaves[k] = v;
@@ -193,6 +198,7 @@ export async function instalarApi(page: Page, st: Estado) {
       return json(route, [
         grupo("google_login", "Login com Google", [["google_oidc_client_id", "ID do cliente", false], ["google_oidc_client_secret", "Chave secreta do cliente", true]]),
         grupo("meta_ads", "Meta Ads", [["meta_app_id", "ID do app", false], ["meta_app_secret", "Chave secreta do app", true]]),
+        grupo("google_ads", "Google Ads", [["google_ads_client_id", "ID do cliente OAuth", false], ["google_ads_client_secret", "Chave secreta do cliente", true]]),
       ]);
     }
     // usuários
