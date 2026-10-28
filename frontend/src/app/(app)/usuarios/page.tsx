@@ -1,12 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { KeyRoundIcon, PencilIcon, PlusIcon, SearchIcon } from "lucide-react";
+import { KeyRoundIcon, PencilIcon, PlusIcon, SearchIcon, Trash2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { Confirmar } from "@/components/confirmar";
 import { Consulta, mensagemDeErro, Vazio } from "@/components/estado";
 import { PageHeader } from "@/components/page-header";
 import { Paginacao } from "@/components/paginacao";
@@ -21,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useSenhaUsuario } from "@/features/auth/api";
-import { useSalvarUsuario, useUsuarios, type Usuario } from "@/features/usuarios/api";
+import { useExcluirUsuario, useSalvarUsuario, useUsuarios, type Usuario } from "@/features/usuarios/api";
 import { useMe } from "@/hooks/use-me";
 import { fmtDataHora, PAPEL_LABEL, type Papel } from "@/lib/format";
 import { pode } from "@/lib/permissoes";
@@ -43,7 +44,9 @@ export default function UsuariosPage() {
   const [busca, setBusca] = useState<string>();
   const [editando, setEditando] = useState<Usuario | "novo" | null>(null);
   const [senhaDe, setSenhaDe] = useState<Usuario | null>(null);
+  const [excluindo, setExcluindo] = useState<Usuario | null>(null);
   const q = useUsuarios({ page, search: busca }, admin);
+  const excluir = useExcluirUsuario();
 
   if (!admin) return <Alert variant="warning">A administração de usuários é restrita a administradores.</Alert>;
   return (
@@ -92,6 +95,11 @@ export default function UsuariosPage() {
                       <Button variant="ghost" size="icon-sm" onClick={() => setEditando(u)} aria-label={`Editar ${u.nome}`} title="Editar">
                         <PencilIcon />
                       </Button>
+                      {u.id !== me?.id && (
+                        <Button variant="ghost" size="icon-sm" onClick={() => setExcluindo(u)} aria-label={`Excluir ${u.nome}`} title="Excluir">
+                          <Trash2Icon />
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -104,6 +112,27 @@ export default function UsuariosPage() {
       </Consulta>
       <UsuarioDialog alvo={editando} proprio={me?.id} onClose={() => setEditando(null)} />
       <SenhaDialog alvo={senhaDe} onClose={() => setSenhaDe(null)} />
+      <Confirmar
+        aberto={!!excluindo}
+        onAberto={(v) => !v && setExcluindo(null)}
+        titulo="Excluir usuário"
+        descricao={
+          <>
+            <strong>{excluindo?.nome}</strong> perde o acesso na hora e sai da lista; nome, e-mail e vínculos com clientes
+            são apagados. Dashboards e relatórios criados por ele continuam disponíveis. Não é possível desfazer. Para
+            apenas suspender o acesso, edite o usuário e desmarque Ativo.
+          </>
+        }
+        acao="Excluir"
+        perigo
+        onConfirmar={() =>
+          excluindo &&
+          excluir.mutate(excluindo.id, {
+            onSuccess: () => { toast.success("Usuário excluído."); setExcluindo(null); },
+            onError: (e) => toast.error(mensagemDeErro(e)),
+          })
+        }
+      />
     </>
   );
 }

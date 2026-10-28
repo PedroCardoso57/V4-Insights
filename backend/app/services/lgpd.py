@@ -12,6 +12,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
+from fastapi import Request
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
@@ -77,15 +78,33 @@ def exportar(db: Session, email: str) -> dict[str, Any]:
 
 
 def anonimizar(db: Session, email: str) -> uuid.UUID:
-    """Desliga o colaborador e remove dados identificáveis, preservando a integridade
-    referencial e a trilha de auditoria (sem nome/e-mail/IP)."""
+    """Anonimização pela CLI (atendimento a titular)."""
     u = _usuario(db, email)
+    excluir(db, u, ator_id=None, acao="lgpd_anonimizar", dados={"origem": "cli"})
+    db.commit()
+    return u.id
+
+
+def excluir(
+    db: Session,
+    u: Usuario,
+    *,
+    ator_id: uuid.UUID | None,
+    acao: str = "excluir",
+    dados: dict[str, Any] | None = None,
+    request: Request | None = None,
+) -> None:
+    """Desliga o colaborador e remove dados identificáveis, preservando a integridade
+    referencial e a trilha de auditoria (sem nome/e-mail/IP). Não faz commit.
+
+    O e-mail fica livre para um novo cadastro."""
     uid = u.id
     u.nome = "Colaborador removido"
     u.email = f"removido+{uid.hex}@anonimizado.invalid"
     u.google_sub = None
     u.senha_hash = None
     u.ativo = False
+    u.excluido_em = func.now()
     db.execute(
         update(Sessao)
         .where(Sessao.usuario_id == uid)
@@ -95,11 +114,10 @@ def anonimizar(db: Session, email: str) -> uuid.UUID:
     db.query(UsuarioCliente).filter(UsuarioCliente.usuario_id == uid).delete()
     registrar(
         db,
-        usuario_id=None,
-        acao="lgpd_anonimizar",
+        usuario_id=ator_id,
+        acao=acao,
         entidade="usuario",
         entidade_id=uid,
-        dados={"origem": "cli"},
+        dados=dados,
+        request=request,
     )
-    db.commit()
-    return uid

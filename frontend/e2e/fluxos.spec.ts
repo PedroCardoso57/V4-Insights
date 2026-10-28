@@ -58,6 +58,28 @@ test("cliente: cadastro com validação, edição e arquivamento com confirmaç�
   await expect(page.getByText("arquivado", { exact: true })).toBeVisible();
 });
 
+test("usuários: cadastrar, editar e excluir com confirmação", async ({ page }) => {
+  await instalarApi(page, novoEstado("admin"));
+  await page.goto("/usuarios");
+  await expect(page.getByRole("button", { name: "Excluir Ana Lima" })).toHaveCount(0); // não se exclui
+  await page.getByRole("button", { name: "Novo usuário" }).click();
+  const dialogo = page.getByRole("dialog");
+  await dialogo.getByLabel("Nome").fill("Duda Melo");
+  await dialogo.getByLabel("E-mail corporativo").fill("duda@v4.com");
+  await dialogo.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByText("Usuário cadastrado.")).toBeVisible();
+  await expect(page.getByRole("cell", { name: "duda@v4.com" })).toBeVisible();
+  await page.getByRole("button", { name: "Editar Duda Melo" }).click();
+  await page.getByRole("dialog").getByLabel("Nome").fill("Duda Melo Silva");
+  await page.getByRole("dialog").getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByText("Usuário atualizado.")).toBeVisible();
+  await page.getByRole("button", { name: "Excluir Caio Reis" }).click();
+  await expect(page.getByRole("alertdialog")).toContainText("Não é possível desfazer");
+  await page.getByRole("alertdialog").getByRole("button", { name: "Excluir" }).click();
+  await expect(page.getByText("Usuário excluído.")).toBeVisible();
+  await expect(page.getByRole("cell", { name: "caio@v4.com" })).toHaveCount(0);
+});
+
 test("conexão: iniciar autorização Meta leva ao provedor", async ({ page }) => {
   const st = novoEstado("analista");
   await instalarApi(page, st);
