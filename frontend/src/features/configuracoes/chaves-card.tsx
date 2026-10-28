@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Field } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useChaves, useSalvarChaves, type GrupoChaves } from "@/features/configuracoes/api";
+import { cn } from "@/lib/utils";
 
 const ORIGEM: Record<string, string> = {
   sistema: "Cadastrada aqui",
@@ -41,11 +42,14 @@ export function GrupoChavesForm({
   grupo,
   onSalvo,
   restrito,
+  compacto,
 }: {
   grupo: GrupoChaves;
   onSalvo?: (grupos: GrupoChaves[]) => void;
   /** Só preenche chaves vazias: as já cadastradas ficam bloqueadas (só o responsável troca). */
   restrito?: boolean;
+  /** No modal de Conectar: sem moldura, sem título e sem o endereço de retorno. */
+  compacto?: boolean;
 }) {
   const salvar = useSalvarChaves();
   const [rascunho, setRascunho] = useState<Record<string, string>>({});
@@ -63,24 +67,28 @@ export function GrupoChavesForm({
 
   return (
     <form
-      className="grid gap-3 rounded-xl border p-4"
+      className={cn("grid min-w-0 gap-3", !compacto && "rounded-xl border p-4")}
       aria-label={grupo.nome}
       onSubmit={(e) => {
         e.preventDefault();
         if (alterado) enviar(rascunho, `Chaves de ${grupo.nome} salvas.`);
       }}
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-sm font-semibold">{grupo.nome}</h3>
-        {grupo.configurado ? <Badge ponto variant="success">configurado</Badge> : <Badge ponto>não configurado</Badge>}
-      </div>
-      <div className="grid gap-1.5">
+      {!compacto && (
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-semibold">{grupo.nome}</h3>
+          {grupo.configurado ? <Badge ponto variant="success">configurado</Badge> : <Badge ponto>não configurado</Badge>}
+        </div>
+      )}
+      {!compacto && (
+      <div className="grid min-w-0 gap-1.5">
         <span className="text-xs text-muted-foreground">Endereço de retorno (cadastre no painel da plataforma)</span>
         <div className="flex items-center gap-2">
           <code className="min-w-0 flex-1 truncate rounded-md bg-subtle px-2 py-1.5 text-xs">{grupo.redirect_uri}</code>
           <Copiar texto={grupo.redirect_uri} />
         </div>
       </div>
+      )}
       {grupo.campos.map((c) => {
         const id = `chave-${c.chave}`;
         const bloqueado = restrito && !!c.origem;
@@ -88,13 +96,17 @@ export function GrupoChavesForm({
           ? "Já cadastrada"
           : [c.origem ? ORIGEM[c.origem] : "Não informada", !c.obrigatorio && "opcional"].filter(Boolean).join(" · ");
         return (
-          <Field key={c.chave} id={id} label={c.rotulo} hint={dica}>
+          <Field key={c.chave} id={id} label={c.rotulo} hint={dica} className="min-w-0">
             {(a) => (
               <div className="flex items-center gap-2">
                 <Input
                   {...a}
                   type={c.secreto ? "password" : "text"}
-                  autoComplete="off"
+                  // Impede o navegador de preencher com o e-mail e a senha de login.
+                  name={`chave-${c.chave}`}
+                  autoComplete={c.secreto ? "new-password" : "off"}
+                  data-1p-ignore
+                  data-lpignore="true"
                   spellCheck={false}
                   maxLength={500}
                   disabled={bloqueado}

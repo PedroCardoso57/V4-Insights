@@ -99,6 +99,10 @@ test("conexão: plataforma sem chaves abre o cadastro e segue para o provedor", 
   await page.getByRole("button", { name: "Conectar Google Ads" }).click();
   const dialogo = page.getByRole("dialog");
   await expect(dialogo.getByRole("heading", { name: "Chaves do Google Ads" })).toBeVisible();
+  await expect(dialogo.getByText("Endereço de retorno")).toHaveCount(0);
+  await expect(dialogo.getByLabel("Chave secreta do cliente")).toHaveAttribute("autocomplete", "new-password");
+  const semRolagem = await dialogo.evaluate((el) => el.scrollWidth <= el.clientWidth);
+  expect(semRolagem).toBe(true);
   await dialogo.getByLabel("ID do cliente OAuth").fill("123.apps");
   await dialogo.getByLabel("Chave secreta do cliente").fill("segredo");
   await dialogo.getByRole("button", { name: "Salvar" }).click();

@@ -37,6 +37,7 @@ export function ChavesDialog({
               <GrupoChavesForm
                 grupo={grupo}
                 restrito={!responsavel}
+                compacto
                 onSalvo={(atualizados) => {
                   if (atualizados.find((g) => g.id === plataforma)?.configurado) onConfigurado(plataforma);
                 }}
