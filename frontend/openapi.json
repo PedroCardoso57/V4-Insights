@@ -165,6 +165,87 @@
         "title": "CampanhaOut",
         "type": "object"
       },
+      "CampoChaveOut": {
+        "properties": {
+          "chave": {
+            "title": "Chave",
+            "type": "string"
+          },
+          "obrigatorio": {
+            "title": "Obrigatorio",
+            "type": "boolean"
+          },
+          "origem": {
+            "anyOf": [
+              {
+                "enum": [
+                  "sistema",
+                  "env"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origem"
+          },
+          "rotulo": {
+            "title": "Rotulo",
+            "type": "string"
+          },
+          "secreto": {
+            "title": "Secreto",
+            "type": "boolean"
+          },
+          "valor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor"
+          }
+        },
+        "required": [
+          "chave",
+          "rotulo",
+          "secreto",
+          "obrigatorio",
+          "origem"
+        ],
+        "title": "CampoChaveOut",
+        "type": "object"
+      },
+      "ChavesIn": {
+        "description": "Chaves a alterar. Texto grava; vazio ou null remove (volta a valer o `.env`).",
+        "properties": {
+          "valores": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxProperties": 20,
+            "minProperties": 1,
+            "title": "Valores",
+            "type": "object"
+          }
+        },
+        "required": [
+          "valores"
+        ],
+        "title": "ChavesIn",
+        "type": "object"
+      },
       "ClienteCreate": {
         "properties": {
           "documento": {
@@ -925,6 +1006,42 @@
           "expira_em"
         ],
         "title": "ExecucaoOut",
+        "type": "object"
+      },
+      "GrupoChavesOut": {
+        "properties": {
+          "campos": {
+            "items": {
+              "$ref": "#/components/schemas/CampoChaveOut"
+            },
+            "title": "Campos",
+            "type": "array"
+          },
+          "configurado": {
+            "title": "Configurado",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "redirect_uri": {
+            "title": "Redirect Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nome",
+          "redirect_uri",
+          "configurado",
+          "campos"
+        ],
+        "title": "GrupoChavesOut",
         "type": "object"
       },
       "IntegracaoOut": {
@@ -3400,6 +3517,91 @@
       }
     },
     "/api/v1/clientes/{cliente_id}": {
+      "delete": {
+        "description": "Exclui o cliente definitivamente, com integrações, métricas, dashboards e relatórios.\nIrreversível; para apenas tirar o cliente de circulação, use o arquivamento.",
+        "operationId": "excluir_api_v1_clientes__cliente_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cliente_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Cliente Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "CONFLICT"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "RATE_LIMITED"
+          }
+        },
+        "summary": "Excluir",
+        "tags": [
+          "clientes"
+        ]
+      },
       "get": {
         "operationId": "obter_api_v1_clientes__cliente_id__get",
         "parameters": [
@@ -4431,6 +4633,185 @@
         "summary": "Membros",
         "tags": [
           "clientes"
+        ]
+      }
+    },
+    "/api/v1/configuracoes/chaves": {
+      "get": {
+        "operationId": "listar_chaves_api_v1_configuracoes_chaves_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GrupoChavesOut"
+                  },
+                  "title": "Response Listar Chaves Api V1 Configuracoes Chaves Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "CONFLICT"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "RATE_LIMITED"
+          }
+        },
+        "summary": "Listar Chaves",
+        "tags": [
+          "configuracoes"
+        ]
+      },
+      "put": {
+        "description": "Grava as chaves informadas (cifradas). Valor vazio remove a chave cadastrada e volta a\nvaler o `.env`. Os valores nunca são registrados na auditoria, só quais mudaram.",
+        "operationId": "salvar_chaves_api_v1_configuracoes_chaves_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChavesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GrupoChavesOut"
+                  },
+                  "title": "Response Salvar Chaves Api V1 Configuracoes Chaves Put",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "CONFLICT"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "RATE_LIMITED"
+          }
+        },
+        "summary": "Salvar Chaves",
+        "tags": [
+          "configuracoes"
         ]
       }
     },

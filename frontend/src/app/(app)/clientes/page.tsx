@@ -1,11 +1,13 @@
 "use client";
 
-import { ArrowDownIcon, ArrowUpIcon, PlusIcon, SearchIcon } from "lucide-react";
+import { ArrowDownIcon, ArrowUpIcon, PlusIcon, SearchIcon, Trash2Icon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
-import { Consulta, Vazio } from "@/components/estado";
+import { Confirmar } from "@/components/confirmar";
+import { Consulta, mensagemDeErro, Vazio } from "@/components/estado";
 import { Inicial } from "@/components/inicial";
 import { PageHeader } from "@/components/page-header";
 import { Paginacao } from "@/components/paginacao";
@@ -14,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useClientes, type FiltroClientes } from "@/features/clientes/api";
+import { useClientes, useExcluirCliente, type Cliente, type FiltroClientes } from "@/features/clientes/api";
 import { ClienteFormDialog } from "@/features/clientes/cliente-form";
 import { useMe } from "@/hooks/use-me";
 import { fmtData } from "@/lib/format";
@@ -28,6 +30,8 @@ export default function ClientesPage() {
   const [texto, setTexto] = useState("");
   const [f, setF] = useState<FiltroClientes>({ status: "ativo", page: 1, page_size: 20, order_by: "nome", order: "asc" });
   const [criando, setCriando] = useState(false);
+  const [excluindo, setExcluindo] = useState<Cliente | null>(null);
+  const excluir = useExcluirCliente();
   const q = useClientes(f);
 
   const ordenar = (col: Ordem) =>
@@ -99,6 +103,7 @@ export default function ClientesPage() {
                   <TableHead>Nome fantasia</TableHead>
                   <TableHead>Status</TableHead>
                   {th("criado_em", "Criado em")}
+                  {pode.excluirClientes(papel) && <TableHead className="w-12"><span className="sr-only">Ações</span></TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -113,6 +118,13 @@ export default function ClientesPage() {
                     <TableCell className="text-text-secondary">{c.nome_fantasia ?? "—"}</TableCell>
                     <TableCell><Badge ponto variant={c.status === "ativo" ? "success" : "secondary"}>{c.status}</Badge></TableCell>
                     <TableCell className="font-mono-num text-xs text-muted-foreground">{fmtData(c.criado_em)}</TableCell>
+                    {pode.excluirClientes(papel) && (
+                      <TableCell>
+                        <Button variant="ghost" size="icon-sm" aria-label={`Excluir ${c.nome}`} onClick={() => setExcluindo(c)}>
+                          <Trash2Icon />
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -122,6 +134,26 @@ export default function ClientesPage() {
           </>
         )}
       </Consulta>
+      <Confirmar
+        aberto={!!excluindo}
+        onAberto={(v) => !v && setExcluindo(null)}
+        titulo="Excluir cliente"
+        descricao={
+          <>
+            Excluir <strong>{excluindo?.nome}</strong> definitivamente? Integrações, métricas, dashboards e relatórios
+            deste cliente serão apagados e não podem ser recuperados.
+          </>
+        }
+        acao="Excluir definitivamente"
+        perigo
+        onConfirmar={() =>
+          excluindo &&
+          excluir.mutate(excluindo.id, {
+            onSuccess: () => toast.success("Cliente excluído."),
+            onError: (e) => toast.error(mensagemDeErro(e)),
+          })
+        }
+      />
       <ClienteFormDialog aberto={criando} onAberto={setCriando} onSalvo={(c) => router.push(`/clientes/${c.id}`)} />
     </>
   );

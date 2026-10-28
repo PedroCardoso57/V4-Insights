@@ -12,6 +12,7 @@ from datetime import date
 from typing import Any
 from urllib.parse import urlencode
 
+from app.core.chaves import config_efetiva
 from app.core.config import get_settings
 from app.integrations.base import (
     ConfigProviderError,
@@ -58,7 +59,7 @@ class TikTokProvider:
     plataforma = "tiktok_ads"
 
     def __init__(self) -> None:
-        s = get_settings()
+        s = config_efetiva()
         if not s.tiktok_enabled:
             raise ConfigProviderError("TikTok não configurado (TIKTOK_APP_ID/TIKTOK_APP_SECRET)")
         self.app_id = s.tiktok_app_id or ""

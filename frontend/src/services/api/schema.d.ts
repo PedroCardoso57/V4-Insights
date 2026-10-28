@@ -164,7 +164,12 @@ export interface paths {
         get: operations["obter_api_v1_clientes__cliente_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Excluir
+         * @description Exclui o cliente definitivamente, com integrações, métricas, dashboards e relatórios.
+         *     Irreversível; para apenas tirar o cliente de circulação, use o arquivamento.
+         */
+        delete: operations["excluir_api_v1_clientes__cliente_id__delete"];
         options?: never;
         head?: never;
         /** Editar */
@@ -252,6 +257,28 @@ export interface paths {
         /** Membros */
         get: operations["membros_api_v1_clientes__cliente_id__usuarios_get"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configuracoes/chaves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar Chaves */
+        get: operations["listar_chaves_api_v1_configuracoes_chaves_get"];
+        /**
+         * Salvar Chaves
+         * @description Grava as chaves informadas (cifradas). Valor vazio remove a chave cadastrada e volta a
+         *     valer o `.env`. Os valores nunca são registrados na auditoria, só quais mudaram.
+         */
+        put: operations["salvar_chaves_api_v1_configuracoes_chaves_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -743,6 +770,31 @@ export interface components {
             kpis: components["schemas"]["Kpis"];
             plataforma: components["schemas"]["Plataforma"];
         };
+        /** CampoChaveOut */
+        CampoChaveOut: {
+            /** Chave */
+            chave: string;
+            /** Obrigatorio */
+            obrigatorio: boolean;
+            /** Origem */
+            origem: ("sistema" | "env") | null;
+            /** Rotulo */
+            rotulo: string;
+            /** Secreto */
+            secreto: boolean;
+            /** Valor */
+            valor?: string | null;
+        };
+        /**
+         * ChavesIn
+         * @description Chaves a alterar. Texto grava; vazio ou null remove (volta a valer o `.env`).
+         */
+        ChavesIn: {
+            /** Valores */
+            valores: {
+                [key: string]: string | null;
+            };
+        };
         /** ClienteCreate */
         ClienteCreate: {
             /** Documento */
@@ -1004,6 +1056,19 @@ export interface components {
             status: components["schemas"]["StatusExecucao"];
             /** Tamanho Bytes */
             tamanho_bytes: number | null;
+        };
+        /** GrupoChavesOut */
+        GrupoChavesOut: {
+            /** Campos */
+            campos: components["schemas"]["CampoChaveOut"][];
+            /** Configurado */
+            configurado: boolean;
+            /** Id */
+            id: string;
+            /** Nome */
+            nome: string;
+            /** Redirect Uri */
+            redirect_uri: string;
         };
         /** IntegracaoOut */
         IntegracaoOut: {
@@ -2359,6 +2424,80 @@ export interface operations {
             };
         };
     };
+    excluir_api_v1_clientes__cliente_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cliente_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description CONFLICT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description RATE_LIMITED */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     editar_api_v1_clientes__cliente_id__patch: {
         parameters: {
             query?: never;
@@ -2797,6 +2936,158 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page_MembroOut_"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description CONFLICT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description RATE_LIMITED */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listar_chaves_api_v1_configuracoes_chaves_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GrupoChavesOut"][];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description CONFLICT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description RATE_LIMITED */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    salvar_chaves_api_v1_configuracoes_chaves_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChavesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GrupoChavesOut"][];
                 };
             };
             /** @description UNAUTHENTICATED */

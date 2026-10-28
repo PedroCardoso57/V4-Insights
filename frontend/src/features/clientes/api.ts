@@ -63,6 +63,15 @@ export function useArquivarCliente() {
   });
 }
 
+/** Exclui o cliente com integrações, métricas, dashboards e relatórios (irreversível). */
+export function useExcluirCliente() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => unwrap(api.DELETE("/api/v1/clientes/{cliente_id}", { params: { path: { cliente_id: id } } })),
+    onSuccess: () => qc.invalidateQueries({ queryKey: clientesKeys.all }),
+  });
+}
+
 export function useAcessoCliente() {
   const qc = useQueryClient();
   return useMutation({

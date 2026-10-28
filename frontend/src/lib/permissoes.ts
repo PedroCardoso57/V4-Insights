@@ -3,6 +3,8 @@ import type { Papel } from "@/lib/format";
 // Espelha as regras do backend apenas para esconder ações; a API é a autoridade.
 export const pode = {
   gerirClientes: (p?: Papel) => p === "admin" || p === "gestor",
+  excluirClientes: (p?: Papel) => p === "admin",
+  gerirChaves: (p?: Papel) => p === "admin",
   gerirUsuarios: (p?: Papel) => p === "admin",
   verUsuarios: (p?: Papel) => p === "admin",
   editar: (p?: Papel) => p === "admin" || p === "gestor" || p === "analista",

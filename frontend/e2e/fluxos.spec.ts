@@ -58,6 +58,38 @@ test("cliente: cadastro com validação, edição e arquivamento com confirmaç�
   await expect(page.getByText("arquivado", { exact: true })).toBeVisible();
 });
 
+test("cliente: admin exclui definitivamente com confirmação", async ({ page }) => {
+  await instalarApi(page, novoEstado("admin"));
+  await page.goto(`/clientes/${CLIENTE}`);
+  await page.getByRole("button", { name: "Excluir" }).click();
+  await expect(page.getByRole("alertdialog")).toContainText("não podem ser recuperados");
+  await page.getByRole("alertdialog").getByRole("button", { name: "Excluir definitivamente" }).click();
+  await expect(page.getByText("Cliente excluído.")).toBeVisible();
+  await expect(page).toHaveURL(/\/clientes$/);
+  await expect(page.getByRole("link", { name: "Padaria Sol" })).toHaveCount(0);
+});
+
+test("configurações: admin cadastra as chaves de uma plataforma", async ({ page }) => {
+  await instalarApi(page, novoEstado("admin"));
+  await page.goto("/configuracoes");
+  const meta = page.getByRole("form", { name: "Meta Ads" });
+  await expect(meta.getByText("não configurado")).toBeVisible();
+  await meta.getByLabel("ID do app").fill("123456");
+  await meta.getByLabel("Chave secreta do app").fill("segredo-novo");
+  await meta.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByText("Chaves de Meta Ads salvas.")).toBeVisible();
+  await expect(meta.getByText("configurado", { exact: true })).toBeVisible();
+  await expect(meta.getByLabel("Chave secreta do app")).toHaveValue("");
+  await expect(page.getByRole("form", { name: "Login com Google" }).getByText("Vem do arquivo .env").first()).toBeVisible();
+});
+
+test("configurações: gestor não vê as chaves das plataformas", async ({ page }) => {
+  await instalarApi(page, novoEstado("gestor"));
+  await page.goto("/configuracoes");
+  await expect(page.getByRole("heading", { name: "Configurações" })).toBeVisible();
+  await expect(page.getByText("Chaves das plataformas", { exact: true })).toHaveCount(0);
+});
+
 test("usuários: cadastrar, editar e excluir com confirmação", async ({ page }) => {
   await instalarApi(page, novoEstado("admin"));
   await page.goto("/usuarios");

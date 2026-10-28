@@ -13,6 +13,7 @@ from decimal import Decimal
 from typing import Any
 from urllib.parse import urlencode
 
+from app.core.chaves import config_efetiva
 from app.core.config import get_settings
 from app.core.oidc import pkce_challenge
 from app.integrations.base import (
@@ -42,7 +43,7 @@ class GoogleAdsProvider:
     plataforma = "google_ads"
 
     def __init__(self) -> None:
-        s = get_settings()
+        s = config_efetiva()
         if not s.google_ads_enabled:
             raise ConfigProviderError(
                 "Google Ads não configurado (GOOGLE_ADS_CLIENT_ID/SECRET/DEVELOPER_TOKEN)"

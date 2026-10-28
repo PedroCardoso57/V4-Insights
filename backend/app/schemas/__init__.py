@@ -519,3 +519,39 @@ class PreviewOut(BaseModel):
     comentarios: str | None
     ultima_coleta_em: datetime | None
     gerado_em: datetime
+
+
+# --- Chaves dos apps das plataformas (Configurações) ------------------------
+
+
+class CampoChaveOut(BaseModel):
+    chave: str
+    rotulo: str
+    secreto: bool
+    obrigatorio: bool
+    # Origem do valor em uso: "sistema" (cadastrado na tela), "env" (.env) ou None.
+    origem: Literal["sistema", "env"] | None
+    # Só para campos não secretos; segredos nunca saem da API.
+    valor: str | None = None
+
+
+class GrupoChavesOut(BaseModel):
+    id: str
+    nome: str
+    redirect_uri: str
+    configurado: bool
+    campos: list[CampoChaveOut]
+
+
+class ChavesIn(BaseModel):
+    """Chaves a alterar. Texto grava; vazio ou null remove (volta a valer o `.env`)."""
+
+    valores: dict[str, str | None] = Field(min_length=1, max_length=20)
+
+    @field_validator("valores")
+    @classmethod
+    def _tamanho(cls, v: dict[str, str | None]) -> dict[str, str | None]:
+        for valor in v.values():
+            if valor is not None and len(valor) > 500:
+                raise ValueError("valor muito longo (máximo 500 caracteres)")
+        return v

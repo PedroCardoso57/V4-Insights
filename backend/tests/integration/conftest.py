@@ -14,6 +14,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.core import chaves
 from app.db.session import Base, get_engine, get_sessionmaker
 from app.main import app
 from app.models import Cliente, Usuario, UsuarioCliente
@@ -45,6 +46,7 @@ def _clean() -> Iterator[None]:
     r = queue.get_redis()
     for k in r.scan_iter("v4:*"):
         r.delete(k)
+    chaves.limpar_cache()
 
 
 class Fila:
