@@ -138,6 +138,8 @@ class Usuario(Base):
     # Login por e-mail e senha (opcional): somente o hash Argon2id é guardado.
     senha_hash: Mapped[str | None] = mapped_column(String(255))
     senha_atualizada_em: Mapped[datetime | None] = _ts(nullable=True)
+    # 0005: excluído pela tela de Usuários (anonimizado, fora das listagens).
+    excluido_em: Mapped[datetime | None] = _ts(nullable=True)
 
     perfil: Mapped[Perfil] = relationship(lazy="joined")
 

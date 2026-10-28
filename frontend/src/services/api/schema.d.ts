@@ -587,7 +587,13 @@ export interface paths {
         get: operations["obter_api_v1_usuarios__usuario_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Excluir
+         * @description Exclui o colaborador: some das listagens, perde o acesso e tem os dados pessoais
+         *     anonimizados (LGPD). Dashboards e relatórios que ele criou e a auditoria são mantidos.
+         *     Irreversível; o e-mail fica livre para um novo cadastro.
+         */
+        delete: operations["excluir_api_v1_usuarios__usuario_id__delete"];
         options?: never;
         head?: never;
         /** Atualizar */
@@ -4896,6 +4902,80 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UsuarioOut"];
                 };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description CONFLICT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description RATE_LIMITED */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    excluir_api_v1_usuarios__usuario_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                usuario_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description UNAUTHENTICATED */
             401: {

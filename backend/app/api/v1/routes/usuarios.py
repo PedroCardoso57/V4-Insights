@@ -13,8 +13,9 @@ from app.core import senhas
 from app.core.oidc import normalize_email
 from app.core.sessions import now
 from app.db.session import get_db
-from app.models import Papel, Sessao, Usuario, UsuarioCliente
+from app.models import Papel, Perfil, Sessao, Usuario, UsuarioCliente
 from app.schemas import DefinirSenhaIn, Page, UsuarioCreate, UsuarioOut, UsuarioUpdate
+from app.services import lgpd
 from app.services.audit import registrar
 from app.services.perfis import perfil_id
 
@@ -37,7 +38,7 @@ def listar(
     principal: Principal = Depends(require_roles(*GERENCIA)),
     db: Session = Depends(get_db),
 ) -> Page[UsuarioOut]:
-    stmt = select(Usuario)
+    stmt = select(Usuario).where(Usuario.excluido_em.is_(None))
     if search:
         like = f"%{search.strip().lower()}%"
         stmt = stmt.where(
@@ -81,9 +82,30 @@ def criar(
 
 def _get_usuario(db: Session, usuario_id: uuid.UUID) -> Usuario:
     u = db.get(Usuario, usuario_id)
-    if u is None:
+    if u is None or u.excluido_em is not None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuário não encontrado")
     return u
+
+
+def _garantir_outro_admin(db: Session, u: Usuario) -> None:
+    """Impede deixar o sistema sem nenhum administrador ativo."""
+    if u.papel != Papel.admin or not u.ativo:
+        return
+    outros = db.scalar(
+        select(func.count())
+        .select_from(Usuario)
+        .join(Perfil, Perfil.id == Usuario.perfil_id)
+        .where(
+            Perfil.codigo == Papel.admin,
+            Usuario.ativo.is_(True),
+            Usuario.excluido_em.is_(None),
+            Usuario.id != u.id,
+        )
+    )
+    if not outros:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "É preciso manter pelo menos um administrador ativo"
+        )
 
 
 @router.get("/{usuario_id}", response_model=UsuarioOut)
@@ -112,6 +134,10 @@ def atualizar(
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, "Não é possível remover o próprio acesso de administrador"
         )
+    if mudancas.get("ativo") is False or (
+        mudancas.get("papel") is not None and mudancas["papel"] != Papel.admin
+    ):
+        _garantir_outro_admin(db, u)
     if body.nome is not None:
         u.nome = body.nome.strip()
     if body.papel is not None:
@@ -139,6 +165,25 @@ def atualizar(
     db.commit()
     db.refresh(u)
     return _out(u)
+
+
+@router.delete("/{usuario_id}", status_code=204)
+def excluir(
+    usuario_id: uuid.UUID,
+    request: Request,
+    principal: Principal = Depends(require_roles(Papel.admin)),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Exclui o colaborador: some das listagens, perde o acesso e tem os dados pessoais
+    anonimizados (LGPD). Dashboards e relatórios que ele criou e a auditoria são mantidos.
+    Irreversível; o e-mail fica livre para um novo cadastro."""
+    u = _get_usuario(db, usuario_id)
+    if u.id == principal.usuario.id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Não é possível excluir o próprio usuário")
+    _garantir_outro_admin(db, u)
+    lgpd.excluir(db, u, ator_id=principal.usuario.id, dados={"papel": u.papel}, request=request)
+    db.commit()
+    return Response(status_code=204)
 
 
 @router.put("/{usuario_id}/senha", status_code=204)

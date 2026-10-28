@@ -25,3 +25,12 @@ export function useSalvarUsuario() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["usuarios"] }),
   });
 }
+
+/** Exclui o colaborador: perde o acesso e tem os dados pessoais anonimizados (irreversível). */
+export function useExcluirUsuario() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => unwrap(api.DELETE("/api/v1/usuarios/{usuario_id}", { params: { path: { usuario_id: id } } })),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["usuarios"] }),
+  });
+}

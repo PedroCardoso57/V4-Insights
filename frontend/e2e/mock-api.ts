@@ -16,6 +16,7 @@ export interface Estado {
   execucoes: Obj[];
   dashboards: Obj[];
   autorizacoes: string[];
+  usuarios: Obj[];
 }
 
 export function novoEstado(papel: Papel | null = "admin"): Estado {
@@ -35,6 +36,10 @@ export function novoEstado(papel: Papel | null = "admin"): Estado {
     execucoes: [],
     dashboards: [],
     autorizacoes: [],
+    usuarios: [
+      { id: "u1", nome: "Ana Lima", email: "ana@v4.com", papel, ativo: true, vinculado_google: true, tem_senha: false, ultimo_login_em: agoraIso(), criado_em: agoraIso() },
+      { id: "u2", nome: "Caio Reis", email: "caio@v4.com", papel: "analista", ativo: true, vinculado_google: false, tem_senha: true, ultimo_login_em: null, criado_em: agoraIso() },
+    ],
   };
 }
 
@@ -161,7 +166,23 @@ export async function instalarApi(page: Page, st: Estado) {
         return json(route, resp);
       }
     }
-    if (p === "/usuarios") return json(route, page1([{ id: "u1", nome: "Ana Lima", email: "ana@v4.com", papel: st.papel, ativo: true, vinculado_google: true, ultimo_login_em: agoraIso(), criado_em: agoraIso() }]));
+    // usuários
+    if (p === "/usuarios" && m === "GET") return json(route, page1(st.usuarios));
+    if (p === "/usuarios" && m === "POST") {
+      const u = { id: uuid(), nome: body.nome, email: String(body.email).toLowerCase(), papel: body.papel, ativo: true, vinculado_google: false, tem_senha: false, ultimo_login_em: null, criado_em: agoraIso() };
+      st.usuarios.push(u);
+      return json(route, u, 201);
+    }
+    if (seg[0] === "usuarios" && seg.length === 2) {
+      const u = st.usuarios.find((x) => x.id === seg[1]);
+      if (!u) return erro(route, 404, "NOT_FOUND", "Usuário não encontrado");
+      if (m === "PATCH") return json(route, Object.assign(u, body));
+      if (m === "DELETE") {
+        if (u.id === "u1") return erro(route, 400, "BAD_REQUEST", "Não é possível excluir o próprio usuário");
+        st.usuarios = st.usuarios.filter((x) => x !== u);
+        return route.fulfill({ status: 204 });
+      }
+    }
     return erro(route, 404, "NOT_FOUND", `rota simulada ausente: ${m} ${p}`);
   });
   await page.route("**/provedor-falso**", (r) => r.fulfill({ contentType: "text/html", body: "<h1>Tela de consentimento do provedor</h1>" }));
