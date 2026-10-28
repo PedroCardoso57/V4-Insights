@@ -10,6 +10,8 @@ from app.integrations.google_ads import GoogleAdsProvider
 from app.integrations.meta import MetaProvider
 from app.models import Auditoria, ChavePlataforma
 
+RESPONSAVEL = "admin@cardosodev.tech"  # padrão de CHAVES_RESPONSAVEIS_EMAILS
+
 
 def _grupo(resposta, gid):  # type: ignore[no-untyped-def]
     return next(g for g in resposta if g["id"] == gid)
@@ -19,8 +21,8 @@ def _campo(grupo, chave):  # type: ignore[no-untyped-def]
     return next(c for c in grupo["campos"] if c["chave"] == chave)
 
 
-def test_admin_cadastra_chaves_e_provedor_passa_a_usar(factory, db) -> None:
-    admin = factory.login(factory.usuario("admin"))
+def test_responsavel_cadastra_chaves_e_provedor_passa_a_usar(factory, db) -> None:
+    admin = factory.login(factory.usuario("admin", email=RESPONSAVEL))
     gads = _grupo(admin.get("/configuracoes/chaves").json(), "google_ads")
     assert gads["configurado"] is False  # nada no ambiente de testes
     assert gads["redirect_uri"].endswith("/api/v1/integracoes/google_ads/callback")
@@ -65,7 +67,7 @@ def test_admin_cadastra_chaves_e_provedor_passa_a_usar(factory, db) -> None:
 
 
 def test_chave_cadastrada_tem_prioridade_sobre_env(factory) -> None:
-    admin = factory.login(factory.usuario("admin"))
+    admin = factory.login(factory.usuario("admin", email=RESPONSAVEL))
     meta = _grupo(admin.get("/configuracoes/chaves").json(), "meta_ads")
     assert _campo(meta, "meta_app_id")["origem"] == "env"
     admin.put("/configuracoes/chaves", json={"valores": {"meta_app_id": "do-sistema"}})
@@ -73,7 +75,7 @@ def test_chave_cadastrada_tem_prioridade_sobre_env(factory) -> None:
 
 
 def test_login_google_usa_chave_cadastrada_e_mostra_origem_env(factory) -> None:
-    admin = factory.login(factory.usuario("admin"))
+    admin = factory.login(factory.usuario("admin", email=RESPONSAVEL))
     google = _grupo(admin.get("/configuracoes/chaves").json(), "google_login")
     # nos testes o client id vem do ambiente
     assert _campo(google, "google_oidc_client_id")["origem"] == "env"
@@ -82,13 +84,64 @@ def test_login_google_usa_chave_cadastrada_e_mostra_origem_env(factory) -> None:
     assert chaves.config_efetiva().google_oidc_client_id == "novo-id"
 
 
-def test_somente_admin_e_chaves_conhecidas(factory) -> None:
+def test_permissoes_por_papel_e_responsavel(factory) -> None:
+    analista = factory.login(factory.usuario("analista"))
+    assert analista.get("/configuracoes/chaves").status_code == 403
+    body = {"valores": {"linkedin_client_id": "1"}}
+    assert analista.put("/configuracoes/chaves", json=body).status_code == 403
+
+    # gestor e admin comum: preenchem só chaves vazias (modal de Conectar)
     gestor = factory.login(factory.usuario("gestor"))
-    assert gestor.get("/configuracoes/chaves").status_code == 403
-    body = {"valores": {"meta_app_id": "1"}}
-    assert gestor.put("/configuracoes/chaves", json=body).status_code == 403
-    admin = factory.login(factory.usuario("admin"))
+    assert gestor.get("/configuracoes/chaves").status_code == 200
+    vazias = {"google_ads_client_id": "g", "google_ads_client_secret": "s"}
+    assert gestor.put("/configuracoes/chaves", json={"valores": vazias}).status_code == 200
+    r = gestor.put("/configuracoes/chaves", json={"valores": {"google_ads_client_id": "outro"}})
+    assert r.status_code == 403 and "ID do cliente OAuth" in r.json()["error"]["message"]
+    comum = factory.login(factory.usuario("admin"))
+    r = comum.put("/configuracoes/chaves", json={"valores": {"meta_app_id": "x"}})  # já no .env
+    assert r.status_code == 403
+    r = comum.put("/configuracoes/chaves", json={"valores": {"google_ads_client_secret": ""}})
+    assert r.status_code == 403  # nem remover
+    assert comum.get("/auth/me").json()["responsavel_chaves"] is False
+
+    # responsável troca e remove qualquer uma
+    resp_u = factory.usuario("admin", email=RESPONSAVEL)
+    resp = factory.login(resp_u)
+    assert resp.get("/auth/me").json()["responsavel_chaves"] is True
+    r = resp.put("/configuracoes/chaves", json={"valores": {"google_ads_client_id": "novo"}})
+    assert r.status_code == 200
+
+
+def test_chaves_conhecidas_e_tamanho(factory) -> None:
+    admin = factory.login(factory.usuario("admin", email=RESPONSAVEL))
     r = admin.put("/configuracoes/chaves", json={"valores": {"database_url": "x"}})
     assert r.status_code == 422
     r = admin.put("/configuracoes/chaves", json={"valores": {"meta_app_id": "x" * 501}})
     assert r.status_code == 422
+
+
+def test_conectar_sem_chaves_pede_cadastro_e_depois_funciona(factory) -> None:
+    admin_u = factory.usuario("admin")
+    c = factory.cliente("Padaria Sol", membros=(admin_u,))
+    admin = factory.login(admin_u)
+    body = {"cliente_id": str(c.id)}
+    r = admin.post("/integracoes/google_ads/autorizar", json=body)
+    assert r.status_code == 503
+    assert r.json()["error"]["code"] == "PROVIDER_NOT_CONFIGURED"
+    assert "Configurações" in r.json()["error"]["message"]
+    valores = {
+        "google_ads_client_id": "cid.apps",
+        "google_ads_client_secret": "s",
+        "google_ads_developer_token": "t",
+    }
+    assert admin.put("/configuracoes/chaves", json={"valores": valores}).status_code == 200
+    r = admin.post("/integracoes/google_ads/autorizar", json=body)
+    assert r.status_code == 200, r.text
+    assert "client_id=cid.apps" in r.json()["authorization_url"]
+
+
+def test_gestor_com_email_do_responsavel_nao_tem_acesso_total(factory) -> None:
+    gestor = factory.login(factory.usuario("gestor", email=RESPONSAVEL))
+    assert gestor.get("/auth/me").json()["responsavel_chaves"] is False
+    r = gestor.put("/configuracoes/chaves", json={"valores": {"meta_app_id": "x"}})
+    assert r.status_code == 403

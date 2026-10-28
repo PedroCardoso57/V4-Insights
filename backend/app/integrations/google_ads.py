@@ -17,6 +17,9 @@ from app.core.chaves import config_efetiva
 from app.core.config import get_settings
 from app.core.oidc import pkce_challenge
 from app.integrations.base import (
+    DICA_CONFIGURACAO as DICA,
+)
+from app.integrations.base import (
     ConfigProviderError,
     ExternalAccount,
     MetricRow,
@@ -45,9 +48,7 @@ class GoogleAdsProvider:
     def __init__(self) -> None:
         s = config_efetiva()
         if not s.google_ads_enabled:
-            raise ConfigProviderError(
-                "Google Ads não configurado (GOOGLE_ADS_CLIENT_ID/SECRET/DEVELOPER_TOKEN)"
-            )
+            raise ConfigProviderError(f"Google Ads não configurado: {DICA}")
         self.client_id = s.google_ads_client_id or ""
         self.client_secret = s.google_ads_client_secret or ""
         self.developer_token = s.google_ads_developer_token or ""

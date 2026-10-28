@@ -12,10 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { fmtData, fmtDataHora, PLATAFORMA_LABEL, PLATAFORMAS, type Plataforma } from "@/lib/format";
+import { useMe } from "@/hooks/use-me";
+import { pode } from "@/lib/permissoes";
 import { cn } from "@/lib/utils";
+import { ApiError } from "@/services/api/client";
 
 import { STATUS_INTEGRACAO as STATUS } from "./alertas";
 import { useAcaoIntegracao, useAutorizar, useIntegracoes, type Integracao } from "./api";
+import { ChavesDialog } from "./chaves-dialog";
 import { JobsDialog } from "./jobs-dialog";
 import { SelecionarContasDialog } from "./selecionar-contas-dialog";
 
@@ -62,10 +66,23 @@ export function IntegracoesLista({ clienteId, arquivado, mostrarCliente }: { cli
   const [contasDe, setContasDe] = useState<Integracao | null>(null);
   const [jobsDe, setJobsDe] = useState<Integracao | null>(null);
   const [revogando, setRevogando] = useState<Integracao | null>(null);
+  const [semChaves, setSemChaves] = useState<Plataforma | null>(null);
+  const admin = pode.gerirChaves(useMe().data?.papel);
 
   const conectar = (plataforma: Plataforma, integracaoId?: string) =>
     clienteId &&
-    autorizar.mutate({ plataforma, clienteId, integracaoId }, { onError: (e) => toast.error(mensagemDeErro(e)) });
+    autorizar.mutate(
+      { plataforma, clienteId, integracaoId },
+      {
+        onError: (e) => {
+          if (e instanceof ApiError && e.code === "PROVIDER_NOT_CONFIGURED") {
+            if (admin) return setSemChaves(plataforma);
+            return toast.error(`${PLATAFORMA_LABEL[plataforma]} ainda não está configurado. Peça a um administrador ou gestor para cadastrar as chaves.`);
+          }
+          toast.error(mensagemDeErro(e));
+        },
+      },
+    );
   const executar = (id: string, a: "sincronizar" | "pausar" | "retomar" | "revogar", ok: string) =>
     acao.mutate({ id, acao: a }, { onSuccess: () => toast.success(ok), onError: (e) => toast.error(mensagemDeErro(e)) });
 
@@ -229,6 +246,14 @@ export function IntegracoesLista({ clienteId, arquivado, mostrarCliente }: { cli
           </div>
         )}
       </Consulta>
+      <ChavesDialog
+        plataforma={semChaves}
+        onClose={() => setSemChaves(null)}
+        onConfigurado={(p) => {
+          setSemChaves(null);
+          conectar(p);
+        }}
+      />
       <SelecionarContasDialog integracao={contasDe} onClose={() => setContasDe(null)} />
       <JobsDialog integracao={jobsDe} onClose={() => setJobsDe(null)} />
       <Confirmar

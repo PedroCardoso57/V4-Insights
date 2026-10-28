@@ -69,8 +69,8 @@ test("cliente: admin exclui definitivamente com confirmação", async ({ page })
   await expect(page.getByRole("link", { name: "Padaria Sol" })).toHaveCount(0);
 });
 
-test("configurações: admin cadastra as chaves de uma plataforma", async ({ page }) => {
-  await instalarApi(page, novoEstado("admin"));
+test("configurações: responsável cadastra as chaves de uma plataforma", async ({ page }) => {
+  await instalarApi(page, { ...novoEstado("admin"), responsavel: true });
   await page.goto("/configuracoes");
   const meta = page.getByRole("form", { name: "Meta Ads" });
   await expect(meta.getByText("não configurado")).toBeVisible();
@@ -83,11 +83,36 @@ test("configurações: admin cadastra as chaves de uma plataforma", async ({ pag
   await expect(page.getByRole("form", { name: "Login com Google" }).getByText("Vem do arquivo .env").first()).toBeVisible();
 });
 
-test("configurações: gestor não vê as chaves das plataformas", async ({ page }) => {
-  await instalarApi(page, novoEstado("gestor"));
-  await page.goto("/configuracoes");
-  await expect(page.getByRole("heading", { name: "Configurações" })).toBeVisible();
-  await expect(page.getByText("Chaves das plataformas", { exact: true })).toHaveCount(0);
+for (const papel of ["admin", "gestor"] as const) {
+  test(`configurações: ${papel} que não é o responsável não vê as chaves`, async ({ page }) => {
+    await instalarApi(page, novoEstado(papel));
+    await page.goto("/configuracoes");
+    await expect(page.getByRole("heading", { name: "Configurações" })).toBeVisible();
+    await expect(page.getByText("Chaves das plataformas", { exact: true })).toHaveCount(0);
+  });
+}
+
+test("conexão: plataforma sem chaves abre o cadastro e segue para o provedor", async ({ page }) => {
+  const st = novoEstado("gestor");
+  await instalarApi(page, st);
+  await page.goto(`/clientes/${CLIENTE}?aba=integracoes`);
+  await page.getByRole("button", { name: "Conectar Google Ads" }).click();
+  const dialogo = page.getByRole("dialog");
+  await expect(dialogo.getByRole("heading", { name: "Chaves do Google Ads" })).toBeVisible();
+  await dialogo.getByLabel("ID do cliente OAuth").fill("123.apps");
+  await dialogo.getByLabel("Chave secreta do cliente").fill("segredo");
+  await dialogo.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByRole("heading", { name: "Tela de consentimento do provedor" })).toBeVisible();
+  expect(st.autorizacoes).toEqual(["google_ads"]);
+  expect(st.chaves.google_ads_client_id).toBe("123.apps");
+});
+
+test("conexão: analista sem chaves recebe aviso para pedir ao administrador", async ({ page }) => {
+  await instalarApi(page, novoEstado("analista"));
+  await page.goto(`/clientes/${CLIENTE}?aba=integracoes`);
+  await page.getByRole("button", { name: "Conectar Google Ads" }).click();
+  await expect(page.getByText(/Peça a um administrador/)).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
 test("usuários: cadastrar, editar e excluir com confirmação", async ({ page }) => {

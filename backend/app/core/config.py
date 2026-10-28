@@ -64,6 +64,12 @@ class Settings(BaseSettings):
     tiktok_app_secret: str | None = None
     tiktok_api_version: str = "v1.3"
 
+    # Contas que veem e alteram todas as chaves das plataformas (Configurações).
+    # Admin e gestor só preenchem chaves ainda vazias, pelo modal de Conectar.
+    chaves_responsaveis_emails: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["admin@cardosodev.tech"]
+    )
+
     # Sincronização
     sync_interval_hours: int = 6
     sync_history_days_default: int = 90
@@ -98,6 +104,13 @@ class Settings(BaseSettings):
     def _split_origins(cls, v: object) -> object:
         if isinstance(v, str):
             return [o.strip().rstrip("/") for o in v.split(",") if o.strip()]
+        return v
+
+    @field_validator("chaves_responsaveis_emails", mode="before")
+    @classmethod
+    def _split_emails(cls, v: object) -> object:
+        if isinstance(v, str):
+            return [e.strip().lower() for e in v.split(",") if e.strip()]
         return v
 
     @field_validator("encryption_keys_previous", mode="before")
