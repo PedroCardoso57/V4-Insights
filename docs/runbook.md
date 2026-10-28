@@ -21,6 +21,11 @@ Docker oficial com rotação de logs, usuário de deploy sem privilégios de roo
 containers também rodam como usuário não-root) e crons de backup (03:15 UTC) e monitoração
 (10 min). Portas publicadas pelo Docker ignoram o ufw: por isso só o proxy publica portas.
 
+Depois, como usuário de deploy, gere o `.env` de produção com segredos aleatórios
+(`ENVIRONMENT`, domínio/HTTPS, `COOKIE_SECURE`, senha do banco e `ENCRYPTION_KEY`):
+`bash infra/vps/configurar-env.sh insights.suaempresa.com.br`. O domínio precisa ter um
+registro DNS A apontando para o IP da VPS antes do primeiro `up`, para o Caddy emitir o certificado.
+
 Homologação e produção usam o mesmo `docker-compose.yml` (produção) e a sobreposição
 `infra/docker/compose.homologacao.yml` (homologação), com projetos e volumes separados.
 
