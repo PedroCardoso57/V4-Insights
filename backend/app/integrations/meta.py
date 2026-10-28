@@ -8,6 +8,7 @@ from datetime import date
 from typing import Any
 from urllib.parse import urlencode
 
+from app.core.chaves import config_efetiva
 from app.core.config import get_settings
 from app.core.urls import UrlNaoPermitida, exigir_url_permitida
 from app.integrations.base import (
@@ -40,7 +41,7 @@ class MetaProvider:
     plataforma = "meta_ads"
 
     def __init__(self) -> None:
-        s = get_settings()
+        s = config_efetiva()
         if not s.meta_enabled:
             raise ConfigProviderError("Meta não configurado (META_APP_ID/META_APP_SECRET)")
         self.app_id = s.meta_app_id or ""

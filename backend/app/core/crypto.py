@@ -13,7 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.models import CredencialIntegracao
+from app.models import ChavePlataforma, CredencialIntegracao
 
 _PREFIX = "secret:"
 
@@ -40,8 +40,22 @@ def rotacionar_chaves(db: Session) -> int:
     for cred in db.scalars(select(CredencialIntegracao)):
         cred.ciphertext = mf.rotate(cred.ciphertext)
         n += 1
+    for chave in db.scalars(select(ChavePlataforma)):
+        chave.ciphertext = mf.rotate(chave.ciphertext)
+        n += 1
     db.commit()
     return n
+
+
+def cifrar(texto: str) -> bytes:
+    return _fernet().encrypt(texto.encode())
+
+
+def decifrar(ciphertext: bytes) -> str:
+    try:
+        return _fernet().decrypt(ciphertext).decode()
+    except InvalidToken as exc:
+        raise ValueError("falha ao descriptografar segredo") from exc
 
 
 def store_secret(

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
 import { SenhaCard } from "@/features/auth/senha-card";
+import { ChavesCard } from "@/features/configuracoes/chaves-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMe } from "@/hooks/use-me";
 import { PAPEL_LABEL } from "@/lib/format";
+import { pode } from "@/lib/permissoes";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useTema } from "@/hooks/use-tema";
 import { cn } from "@/lib/utils";
@@ -40,7 +42,7 @@ export default function ConfiguracoesPage() {
 
   return (
     <>
-      <PageHeader titulo="Configurações" descricao="Preferências deste navegador e status operacional da plataforma." />
+      <PageHeader titulo="Configurações" descricao="Preferências deste navegador, status operacional e chaves das plataformas." />
       <div className="grid gap-5 lg:grid-cols-2">
         <Card className="lg:col-span-2">
           <CardHeader className="flex-col items-start">
@@ -135,6 +137,7 @@ export default function ConfiguracoesPage() {
             )}
           </CardContent>
         </Card>
+        {pode.gerirChaves(me?.papel) && <ChavesCard />}
       </div>
     </>
   );

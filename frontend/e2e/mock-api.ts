@@ -17,6 +17,7 @@ export interface Estado {
   dashboards: Obj[];
   autorizacoes: string[];
   usuarios: Obj[];
+  chaves: Record<string, string>;
 }
 
 export function novoEstado(papel: Papel | null = "admin"): Estado {
@@ -40,6 +41,7 @@ export function novoEstado(papel: Papel | null = "admin"): Estado {
       { id: "u1", nome: "Ana Lima", email: "ana@v4.com", papel, ativo: true, vinculado_google: true, tem_senha: false, ultimo_login_em: agoraIso(), criado_em: agoraIso() },
       { id: "u2", nome: "Caio Reis", email: "caio@v4.com", papel: "analista", ativo: true, vinculado_google: false, tem_senha: true, ultimo_login_em: null, criado_em: agoraIso() },
     ],
+    chaves: { google_oidc_client_id: "id-do-env", google_oidc_client_secret: "segredo-do-env" },
   };
 }
 
@@ -100,6 +102,11 @@ export async function instalarApi(page: Page, st: Estado) {
       if (!c) return erro(route, 404, "NOT_FOUND", "Cliente não encontrado");
       if (seg.length === 2 && m === "GET") return json(route, c);
       if (seg.length === 2 && m === "PATCH") return json(route, Object.assign(c, body, { atualizado_em: agoraIso() }));
+      if (seg.length === 2 && m === "DELETE") {
+        if (st.papel !== "admin") return erro(route, 403, "FORBIDDEN", "Permissão insuficiente");
+        st.clientes = st.clientes.filter((x) => x !== c);
+        return route.fulfill({ status: 204 });
+      }
       if (seg[2] === "arquivar") return json(route, Object.assign(c, { status: "arquivado", arquivado_em: agoraIso() }));
       if (seg[2] === "usuarios") return json(route, page1([{ id: "u1", nome: "Ana Lima", email: "ana@v4.com", papel: "analista", ativo: true, atribuido_em: agoraIso() }]));
       const plat = url.searchParams.get("plataforma");
@@ -165,6 +172,28 @@ export async function instalarApi(page: Page, st: Estado) {
         lista.forEach((e) => Object.assign(e, { status: "concluido", progresso: 100, finalizado_em: agoraIso(), download_url: `/api/v1/relatorios/execucoes/${e.id}/download` }));
         return json(route, resp);
       }
+    }
+    // chaves das plataformas (Configurações, somente admin)
+    if (p === "/configuracoes/chaves") {
+      if (st.papel !== "admin") return erro(route, 403, "FORBIDDEN", "Permissão insuficiente");
+      if (m === "PUT") {
+        for (const [k, v] of Object.entries(body.valores as Record<string, string | null>)) {
+          if (v) st.chaves[k] = v;
+          else delete st.chaves[k];
+        }
+      }
+      const grupo = (id: string, nome: string, campos: [string, string, boolean][]) => {
+        const cs = campos.map(([chave, rotulo, secreto]) => ({
+          chave, rotulo, secreto, obrigatorio: true,
+          origem: st.chaves[chave] ? (st.chaves[chave].includes("do-env") ? "env" : "sistema") : null,
+          valor: secreto ? null : (st.chaves[chave] ?? null),
+        }));
+        return { id, nome, redirect_uri: `https://insights.exemplo/api/v1/${id}/callback`, configurado: cs.every((c) => c.origem), campos: cs };
+      };
+      return json(route, [
+        grupo("google_login", "Login com Google", [["google_oidc_client_id", "ID do cliente", false], ["google_oidc_client_secret", "Chave secreta do cliente", true]]),
+        grupo("meta_ads", "Meta Ads", [["meta_app_id", "ID do app", false], ["meta_app_secret", "Chave secreta do app", true]]),
+      ]);
     }
     // usuários
     if (p === "/usuarios" && m === "GET") return json(route, page1(st.usuarios));

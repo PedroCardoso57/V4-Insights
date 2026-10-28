@@ -13,6 +13,7 @@ from datetime import date
 from typing import Any
 from urllib.parse import quote, urlencode
 
+from app.core.chaves import config_efetiva
 from app.core.config import get_settings
 from app.integrations.base import (
     ConfigProviderError,
@@ -68,7 +69,7 @@ class LinkedInProvider:
     plataforma = "linkedin_ads"
 
     def __init__(self) -> None:
-        s = get_settings()
+        s = config_efetiva()
         if not s.linkedin_enabled:
             raise ConfigProviderError(
                 "LinkedIn não configurado (LINKEDIN_CLIENT_ID/LINKEDIN_CLIENT_SECRET)"

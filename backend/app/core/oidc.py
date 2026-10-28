@@ -12,6 +12,7 @@ from urllib.parse import urlencode
 import httpx
 import jwt
 
+from app.core.chaves import config_efetiva
 from app.core.config import get_settings
 
 
@@ -36,7 +37,7 @@ def login_redirect_uri() -> str:
 
 
 def build_authorize_url(state: str, nonce: str, code_verifier: str) -> str:
-    s = get_settings()
+    s = config_efetiva()
     params = {
         "client_id": s.google_oidc_client_id,
         "response_type": "code",
@@ -52,7 +53,7 @@ def build_authorize_url(state: str, nonce: str, code_verifier: str) -> str:
 
 
 def exchange_code(code: str, code_verifier: str) -> dict[str, Any]:
-    s = get_settings()
+    s = config_efetiva()
     try:
         resp = httpx.post(
             s.google_oidc_token_url,
@@ -83,7 +84,7 @@ def _jwks_client(url: str) -> jwt.PyJWKClient:
 
 def verify_id_token(id_token: str, nonce: str) -> IdentidadeGoogle:
     """Valida assinatura (JWKS), issuer, audience, exp, nonce e email_verified."""
-    s = get_settings()
+    s = config_efetiva()
     try:
         key = _jwks_client(s.google_oidc_jwks_url).get_signing_key_from_jwt(id_token)
         claims: dict[str, Any] = jwt.decode(

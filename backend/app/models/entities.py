@@ -469,3 +469,19 @@ class SyncJob(Base):
     iniciado_em: Mapped[datetime | None] = _ts(nullable=True)
     finalizado_em: Mapped[datetime | None] = _ts(nullable=True)
     criado_em: Mapped[datetime] = _ts()
+
+
+class ChavePlataforma(Base):
+    """0006: chaves dos apps (Google, Meta, LinkedIn, TikTok) cadastradas pela tela.
+
+    O valor fica cifrado (Fernet, ENCRYPTION_KEY) e tem precedência sobre o `.env`.
+    """
+
+    __tablename__ = "chaves_plataforma"
+
+    chave: Mapped[str] = mapped_column(String(64), primary_key=True)
+    ciphertext: Mapped[bytes] = mapped_column(LargeBinary)
+    atualizado_por: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("usuarios.id", ondelete="SET NULL")
+    )
+    atualizado_em: Mapped[datetime] = _ts(onupdate=func.now())

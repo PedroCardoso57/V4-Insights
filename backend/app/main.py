@@ -9,6 +9,7 @@ from app.api.v1.routes import (
     auditoria,
     auth,
     clientes,
+    configuracoes,
     dashboards,
     integracoes,
     metricas,
@@ -48,7 +49,17 @@ def create_app() -> FastAPI:
     app.add_api_route("/metrics", resposta_metricas, include_in_schema=False)
     app.include_router(health.router)  # /health/live e /health/ready (fora do versionamento)
     v1 = APIRouter(prefix=API_PREFIX, responses=ERROR_RESPONSES)
-    for r in (auth, usuarios, clientes, integracoes, metricas, dashboards, relatorios, auditoria):
+    for r in (
+        auth,
+        usuarios,
+        clientes,
+        integracoes,
+        metricas,
+        dashboards,
+        relatorios,
+        auditoria,
+        configuracoes,
+    ):
         v1.include_router(r.router)
     app.include_router(v1)
     return app

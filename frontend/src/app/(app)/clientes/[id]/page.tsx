@@ -1,6 +1,6 @@
 "use client";
 
-import { ArchiveIcon, BarChart3Icon, PencilIcon } from "lucide-react";
+import { ArchiveIcon, BarChart3Icon, PencilIcon, Trash2Icon } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -13,7 +13,7 @@ import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useArquivarCliente, useCliente } from "@/features/clientes/api";
+import { useArquivarCliente, useCliente, useExcluirCliente } from "@/features/clientes/api";
 import { ClienteFormDialog } from "@/features/clientes/cliente-form";
 import { Equipe } from "@/features/clientes/equipe";
 import { IntegracoesLista } from "@/features/integracoes/integracoes-lista";
@@ -32,6 +32,8 @@ export default function ClienteDetalhePage() {
   const arquivar = useArquivarCliente();
   const [editando, setEditando] = useState(false);
   const [arquivando, setArquivando] = useState(false);
+  const excluir = useExcluirCliente();
+  const [excluindo, setExcluindo] = useState(false);
 
   return (
     <Consulta query={q}>
@@ -51,6 +53,9 @@ export default function ClienteDetalhePage() {
                       <Button variant="outline" onClick={() => setEditando(true)}><PencilIcon /> Editar</Button>
                       <Button variant="destructive" onClick={() => setArquivando(true)}><ArchiveIcon /> Arquivar</Button>
                     </>
+                  )}
+                  {pode.excluirClientes(papel) && (
+                    <Button variant="destructive" onClick={() => setExcluindo(true)}><Trash2Icon /> Excluir</Button>
                   )}
                 </>
               }
@@ -81,6 +86,29 @@ export default function ClienteDetalhePage() {
               perigo
               onConfirmar={() =>
                 arquivar.mutate(c.id, { onSuccess: () => toast.success("Cliente arquivado."), onError: (e) => toast.error(mensagemDeErro(e)) })
+              }
+            />
+            <Confirmar
+              aberto={excluindo}
+              onAberto={setExcluindo}
+              titulo="Excluir cliente"
+              descricao={
+                <>
+                  Excluir <strong>{c.nome}</strong> definitivamente? Integrações, métricas, dashboards e relatórios
+                  deste cliente serão apagados e não podem ser recuperados. Para só tirar o cliente de circulação, use
+                  Arquivar.
+                </>
+              }
+              acao="Excluir definitivamente"
+              perigo
+              onConfirmar={() =>
+                excluir.mutate(c.id, {
+                  onSuccess: () => {
+                    toast.success("Cliente excluído.");
+                    router.push("/clientes");
+                  },
+                  onError: (e) => toast.error(mensagemDeErro(e)),
+                })
               }
             />
           </>

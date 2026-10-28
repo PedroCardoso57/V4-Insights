@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import contextlib
 import uuid
 from typing import Any, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
@@ -13,6 +14,8 @@ from app.core.sessions import now
 from app.db.session import get_db
 from app.models import Cliente, Papel, StatusCliente, Usuario, UsuarioCliente
 from app.schemas import ClienteCreate, ClienteOut, ClienteUpdate, MembroOut, Page
+from app.services import clientes as svc_clientes
+from app.services import storage
 from app.services.audit import registrar
 
 router = APIRouter(prefix="/clientes", tags=["clientes"])
@@ -156,6 +159,24 @@ def arquivar(
         db.commit()
         db.refresh(c)
     return ClienteOut.model_validate(c)
+
+
+@router.delete("/{cliente_id}", status_code=204)
+def excluir(
+    cliente_id: uuid.UUID,
+    request: Request,
+    principal: Principal = Depends(require_roles(Papel.admin)),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Exclui o cliente definitivamente, com integrações, métricas, dashboards e relatórios.
+    Irreversível; para apenas tirar o cliente de circulação, use o arquivamento."""
+    c = get_cliente_autorizado(db, principal, cliente_id)
+    pdfs = svc_clientes.excluir(db, c, ator_id=principal.usuario.id, request=request)
+    db.commit()
+    for ref in pdfs:
+        with contextlib.suppress(storage.StorageError):
+            storage.remover(ref)
+    return Response(status_code=204)
 
 
 @router.get("/{cliente_id}/usuarios", response_model=Page[MembroOut])
