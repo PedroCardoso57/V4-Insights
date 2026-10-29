@@ -71,3 +71,18 @@ def test_encryption_keys_previous_aceita_vazio_e_lista(
     monkeypatch.setenv("ENCRYPTION_KEY", chave)
     monkeypatch.setenv("ENCRYPTION_KEYS_PREVIOUS", valor.replace("CHAVE", chave))
     assert len(Settings().encryption_keys_previous) == esperado
+
+
+@pytest.mark.parametrize(
+    ("valor", "esperado"),
+    [("", "v25"), ("v18", "v25"), ("v22", "v25"), ("v24", "v24"), ("v26", "v26")],
+)
+def test_google_ads_api_version_ignora_versoes_desativadas(
+    monkeypatch: pytest.MonkeyPatch, valor: str, esperado: str
+) -> None:
+    # .env gerados de exemplos antigos trazem GOOGLE_ADS_API_VERSION=v18, que o Google já desligou.
+    from app.core.config import Settings
+
+    monkeypatch.setenv("ENCRYPTION_KEY", Fernet.generate_key().decode())
+    monkeypatch.setenv("GOOGLE_ADS_API_VERSION", valor)
+    assert Settings().google_ads_api_version == esperado
