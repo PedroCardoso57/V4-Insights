@@ -101,7 +101,7 @@ export function IntegracoesLista({ clienteId, arquivado, mostrarCliente }: { cli
               </div>
               <p className="mt-3 mb-4 text-[13px] leading-relaxed text-text-secondary">{CONECTORES[p].descricao}</p>
               <div className="mt-auto flex justify-end border-t pt-4">
-                <Button onClick={() => conectar(p)} disabled={autorizar.isPending}>
+                <Button className="w-full sm:w-auto" onClick={() => conectar(p)} disabled={autorizar.isPending}>
                   <PlugZapIcon /> Conectar {PLATAFORMA_LABEL[p]}
                 </Button>
               </div>
@@ -129,10 +129,10 @@ export function IntegracoesLista({ clienteId, arquivado, mostrarCliente }: { cli
               const ativas = i.contas.filter((c) => c.ativa).length;
               return (
                 <Card key={i.id} className="overflow-hidden">
-                  <div className="flex flex-wrap items-start justify-between gap-3 p-5 pb-4">
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-start justify-between gap-3 p-4 pb-3 sm:p-5 sm:pb-4">
+                    <div className="flex min-w-0 items-center gap-3">
                       <Selo plataforma={i.plataforma} />
-                      <div className="grid gap-0.5">
+                      <div className="grid min-w-0 gap-0.5">
                         <h3 className="text-sm font-semibold">{PLATAFORMA_LABEL[i.plataforma]}</h3>
                         <p className="text-xs text-muted-foreground">
                           {CONECTORES[i.plataforma].categoria} · {ativas} {ativas === 1 ? "conta ativa" : "contas ativas"}
@@ -150,14 +150,14 @@ export function IntegracoesLista({ clienteId, arquivado, mostrarCliente }: { cli
                     <Badge ponto variant={STATUS[i.status].variant}>{STATUS[i.status].label}</Badge>
                   </div>
 
-                  <div className="grid gap-3 px-5 pb-5">
-                    <dl className="grid gap-2 rounded-xl border bg-subtle p-3.5 text-xs sm:grid-cols-[8rem_1fr]">
+                  <div className="grid gap-3 px-4 pb-4 sm:px-5 sm:pb-5">
+                    <dl className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-2 rounded-xl border bg-subtle p-3.5 text-xs sm:grid-cols-[8rem_1fr]">
                       <dt className="text-muted-foreground">Última sinc.</dt>
-                      <dd className="font-mono-num font-semibold sm:text-right">{fmtDataHora(i.ultima_sincronizacao_em)}</dd>
+                      <dd className="text-right font-mono-num font-semibold">{fmtDataHora(i.ultima_sincronizacao_em)}</dd>
                       {i.escopos.length > 0 && (
                         <>
                           <dt className="text-muted-foreground">Escopos OAuth</dt>
-                          <dd className="flex flex-wrap gap-1 sm:justify-end">
+                          <dd className="flex flex-wrap justify-end gap-1">
                             {i.escopos.map((e) => (
                               <code key={e} className="rounded border bg-card px-1.5 py-0.5 font-mono-num text-[10px] text-text-secondary">
                                 {e}
@@ -205,7 +205,7 @@ export function IntegracoesLista({ clienteId, arquivado, mostrarCliente }: { cli
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-end gap-2 border-t bg-subtle/60 px-5 py-3.5">
+                  <div className="grid grid-cols-2 gap-2 border-t bg-subtle/60 px-4 py-3.5 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:px-5 [&>*:last-child:nth-child(odd)]:col-span-2">
                     {i.status !== "revogada" && (
                       <Button variant="outline" size="sm" onClick={() => setContasDe(i)} disabled={arquivado}>
                         <ListChecksIcon /> Contas

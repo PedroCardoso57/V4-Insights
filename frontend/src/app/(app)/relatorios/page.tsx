@@ -56,7 +56,7 @@ export default function RelatoriosPage() {
     <>
       <PageHeader titulo="Relatórios" descricao="Configure, visualize a prévia e gere PDFs dos clientes da sua carteira." />
       <form className="mb-5 flex flex-wrap items-center gap-2 rounded-xl border bg-card p-4 shadow-xs" role="search" onSubmit={(e) => { e.preventDefault(); setBusca(texto.trim() || undefined); }}>
-        <Input type="search" aria-label="Buscar relatório" placeholder="Buscar por título" value={texto} onChange={(e) => setTexto(e.target.value)} className="w-64" />
+        <Input type="search" aria-label="Buscar relatório" placeholder="Buscar por título" value={texto} onChange={(e) => setTexto(e.target.value)} className="min-w-0 flex-1 sm:w-64 sm:flex-none" />
         <Button type="submit" variant="outline"><SearchIcon /> Buscar</Button>
       </form>
       <ListaRelatorios clienteId={clienteId} search={busca} nomesClientes={nomes} />

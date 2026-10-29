@@ -21,7 +21,7 @@ export function ClientSelector() {
       }}
       disabled={!itens.length}
     >
-      <SelectTrigger data-tour="cliente" className="h-8 w-52 max-w-[50vw] text-xs" aria-label="Selecionar cliente">
+      <SelectTrigger data-tour="cliente" className="h-9 w-full text-[13px] sm:h-8 sm:w-52 sm:text-xs" aria-label="Selecionar cliente">
         <SelectValue placeholder={q.isPending ? "Carregando clientes…" : itens.length ? "Selecionar cliente" : "Sem clientes"} />
       </SelectTrigger>
       <SelectContent>

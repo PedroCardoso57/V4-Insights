@@ -66,7 +66,7 @@ export default function ClientesPage() {
             onChange={(e) => setTexto(e.target.value)} className="pl-8" />
         </div>
         <Select value={f.status ?? "todos"} onValueChange={(v) => setF({ ...f, page: 1, status: v === "todos" ? undefined : (v as FiltroClientes["status"]) })}>
-          <SelectTrigger className="w-40" aria-label="Status"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="flex-1 sm:w-40 sm:flex-none" aria-label="Status"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="ativo">Ativos</SelectItem>
             <SelectItem value="arquivado">Arquivados</SelectItem>
@@ -119,7 +119,7 @@ export default function ClientesPage() {
                     <TableCell><Badge ponto variant={c.status === "ativo" ? "success" : "secondary"}>{c.status}</Badge></TableCell>
                     <TableCell className="font-mono-num text-xs text-muted-foreground">{fmtData(c.criado_em)}</TableCell>
                     {pode.excluirClientes(papel) && (
-                      <TableCell>
+                      <TableCell data-label="" data-canto="">
                         <Button variant="ghost" size="icon-sm" aria-label={`Excluir ${c.nome}`} onClick={() => setExcluindo(c)}>
                           <Trash2Icon />
                         </Button>

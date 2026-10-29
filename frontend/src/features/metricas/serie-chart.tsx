@@ -23,7 +23,7 @@ export function SerieChart({ serie, kpi, moeda = "BRL" }: { serie: Schemas["Seri
   );
   if (!dados.length) return <p className="py-10 text-center text-sm text-muted-foreground">Sem dados no período.</p>;
   return (
-    <figure aria-label={`Série temporal de ${KPI_LABEL[kpi]}`} className="h-72 w-full">
+    <figure aria-label={`Série temporal de ${KPI_LABEL[kpi]}`} className="h-60 w-full sm:h-72">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={dados} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
           <defs>
@@ -33,10 +33,10 @@ export function SerieChart({ serie, kpi, moeda = "BRL" }: { serie: Schemas["Seri
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 4" stroke="var(--line)" vertical={false} />
-          <XAxis dataKey="periodo" tick={EIXO} tickMargin={8} axisLine={false} tickLine={false} />
+          <XAxis dataKey="periodo" tick={EIXO} tickMargin={8} minTickGap={18} axisLine={false} tickLine={false} />
           <YAxis
             tick={EIXO}
-            width={72}
+            width={64}
             axisLine={false}
             tickLine={false}
             tickFormatter={(v: number) => fmtKpi(kpi, v, moeda).replace(/,\d+/, "")}

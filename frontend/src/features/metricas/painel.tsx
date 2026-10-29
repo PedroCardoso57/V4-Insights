@@ -33,7 +33,7 @@ export function PainelCliente({ clienteId, inicial }: { clienteId: string; inici
   );
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4">
       <FiltrosBar filtros={filtros} onChange={setFiltros} integracoes={integracoes.data?.items} campanhas={opcoes} />
       <Consulta
         query={resumo}
@@ -58,10 +58,10 @@ export function PainelCliente({ clienteId, inicial }: { clienteId: string; inici
               <CardHeader className="border-b">
                 <div>
                   <CardTitle>Evolução temporal</CardTitle>
-                  <CardDescription>Acompanhamento consolidado no período · passe o cursor para inspecionar</CardDescription>
+                  <CardDescription>Acompanhamento consolidado no período · passe o cursor ou toque para inspecionar</CardDescription>
                 </div>
                 <Select value={kpiSerie} onValueChange={(v) => setKpiSerie(v as KpiKey)}>
-                  <SelectTrigger className="w-48" aria-label="Métrica do gráfico"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-48" aria-label="Métrica do gráfico"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {(Object.keys(KPI_LABEL) as KpiKey[]).map((k) => (
                       <SelectItem key={k} value={k}>{KPI_LABEL[k]}</SelectItem>

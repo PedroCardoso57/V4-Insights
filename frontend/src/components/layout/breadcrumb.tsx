@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useCliente } from "@/features/clientes/api";
+import { cn } from "@/lib/utils";
 
 const ROTULOS: Record<string, string> = {
   clientes: "Clientes",
@@ -32,10 +33,15 @@ export function Breadcrumb() {
     <nav aria-label="Trilha de navegação" className="min-w-0">
       <ol className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
         {itens.map((it, i) => (
-          <li key={it.href} className="flex min-w-0 items-center gap-1">
-            {i > 0 && <ChevronRightIcon className="size-[13px] shrink-0 text-faint" aria-hidden />}
+          <li key={it.href} className={cn("flex min-w-0 items-center gap-1", i < itens.length - 2 && "max-sm:hidden")}>
+            {i > 0 && (
+              <ChevronRightIcon
+                className={cn("size-[13px] shrink-0 text-faint", i === itens.length - 2 && "max-sm:hidden")}
+                aria-hidden
+              />
+            )}
             {i === itens.length - 1 ? (
-              <span aria-current="page" className="truncate font-semibold text-foreground">
+              <span aria-current="page" className="truncate font-semibold text-foreground max-sm:text-sm">
                 {it.label}
               </span>
             ) : (

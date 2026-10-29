@@ -63,7 +63,7 @@ export function ListaRelatorios({ clienteId, search, nomesClientes }: { clienteI
                     <TableCell><Badge variant="secondary">{TEMPLATES[r.configuracao.template ?? "visao_executiva"]}</Badge></TableCell>
                     <TableCell className="font-mono-num text-xs text-muted-foreground">{fmtDataHora(r.atualizado_em)}</TableCell>
                     {pode.editar(papel) && (
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" data-label="" data-canto="">
                         <Button variant="ghost" size="icon-sm" className="hover:bg-destructive-soft hover:text-destructive" onClick={() => setAlvo(r)} aria-label={`Excluir ${r.titulo}`}>
                           <Trash2Icon />
                         </Button>

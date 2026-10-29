@@ -207,12 +207,21 @@ test("layout responsivo em 360px sem rolagem horizontal @mobile", async ({ page 
   await instalarApi(page, novoEstado("admin"));
   await page.setViewportSize({ width: 360, height: 780 });
   await page.goto("/clientes");
-  await expect(page.getByRole("button", { name: "Abrir menu" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mais" })).toBeVisible();
   const largura = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(largura).toBeLessThanOrEqual(360);
-  await page.getByRole("button", { name: "Abrir menu" }).click();
+  await page.getByRole("button", { name: "Mais" }).click();
   await page.getByRole("link", { name: "Relatórios" }).click();
   await expect(page.getByRole("heading", { name: "Relatórios" })).toBeVisible();
+});
+
+test("dashboard no celular: filtros e tabela de campanhas cabem na tela @mobile", async ({ page }) => {
+  await instalarApi(page, novoEstado("analista"));
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.goto(`/clientes/${CLIENTE}/dashboards`);
+  await expect(page.getByRole("cell", { name: "Campanha Google" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+  await expect(page.getByRole("navigation", { name: "Navegação rápida" })).toBeVisible();
 });
 
 test("tutorial: primeiro acesso percorre as áreas com o Nico e não volta depois de concluído", async ({ page }) => {

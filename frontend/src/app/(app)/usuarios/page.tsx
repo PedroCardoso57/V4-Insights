@@ -58,7 +58,7 @@ export default function UsuariosPage() {
         acoes={<Button onClick={() => setEditando("novo")}><PlusIcon /> Novo usuário</Button>}
       />
       <form className="mb-5 flex flex-wrap items-center gap-2 rounded-xl border bg-card p-4 shadow-xs" role="search" onSubmit={(e) => { e.preventDefault(); setPage(1); setBusca(texto.trim() || undefined); }}>
-        <Input type="search" aria-label="Buscar usuário" placeholder="Nome ou e-mail" value={texto} onChange={(e) => setTexto(e.target.value)} className="w-64" />
+        <Input type="search" aria-label="Buscar usuário" placeholder="Nome ou e-mail" value={texto} onChange={(e) => setTexto(e.target.value)} className="min-w-0 flex-1 sm:w-64 sm:flex-none" />
         <Button type="submit" variant="outline"><SearchIcon /> Buscar</Button>
       </form>
       <Consulta query={q} vazio={(d) => d.items.length === 0 && <Vazio titulo="Nenhum usuário encontrado" />}>
@@ -85,7 +85,7 @@ export default function UsuariosPage() {
                         {u.nome}
                       </span>
                     </TableCell>
-                    <TableCell className="text-text-secondary">{u.email}</TableCell>
+                    <TableCell className="text-text-secondary" data-largo="">{u.email}</TableCell>
                     <TableCell>{PAPEL_LABEL[u.papel as Papel]}</TableCell>
                     <TableCell className="flex flex-wrap gap-1">
                       <Badge ponto variant={u.ativo ? "success" : "destructive"}>{u.ativo ? "ativo" : "inativo"}</Badge>
@@ -94,7 +94,7 @@ export default function UsuariosPage() {
                       {u.tem_senha && <Badge variant="outline">senha</Badge>}
                     </TableCell>
                     <TableCell className="font-mono-num text-xs text-muted-foreground">{fmtDataHora(u.ultimo_login_em)}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right" data-label="">
                       <Button variant="ghost" size="icon-sm" onClick={() => setSenhaDe(u)} aria-label={`Senha de ${u.nome}`} title="Definir senha">
                         <KeyRoundIcon />
                       </Button>

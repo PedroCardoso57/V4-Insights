@@ -23,7 +23,7 @@ import { PAPEL_LABEL } from "@/lib/format";
 import { pode } from "@/lib/permissoes";
 import { cn } from "@/lib/utils";
 
-interface Item {
+export interface Item {
   href: string;
   label: string;
   icon: LucideIcon;
@@ -31,7 +31,7 @@ interface Item {
   contador?: number;
 }
 
-function itemAtivo(label: string, href: string, path: string): boolean {
+export function itemAtivo(label: string, href: string, path: string): boolean {
   const ehDashboard = path.endsWith("/dashboards");
   if (href === "/") return path === "/";
   if (label === "Dashboards") return ehDashboard;
@@ -51,8 +51,8 @@ export function Marca({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
-  const path = usePathname();
+/** Itens do menu principal visíveis para o papel do usuário. */
+export function useItensNav(): Item[] {
   const me = useMe().data;
   const [clienteAtual] = useClienteAtual();
   const { alertas } = useAlertasIntegracao();
@@ -75,15 +75,19 @@ export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
     { href: "/usuarios", label: "Usuários", icon: UserIcon, visivel: pode.gerirUsuarios(me?.papel) },
     { href: "/configuracoes", label: "Configurações", icon: SettingsIcon },
   ];
+  return itens.filter((i) => i.visivel !== false);
+}
+
+export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const path = usePathname();
+  const itens = useItensNav();
   return (
     <>
       <span className="block px-3 py-1.5 text-[10px] font-semibold tracking-widest text-faint uppercase">
         Inteligência &amp; Operação
       </span>
       <ul className="grid gap-1">
-        {itens
-          .filter((i) => i.visivel !== false)
-          .map(({ href, label, icon: Icon, contador }) => {
+        {itens.map(({ href, label, icon: Icon, contador }) => {
             const ativo = itemAtivo(label, href, path);
             return (
               <li key={label}>
