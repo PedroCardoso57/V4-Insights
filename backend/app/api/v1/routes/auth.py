@@ -27,6 +27,7 @@ from app.db.session import get_db
 from app.models import OAuthState, Papel, Sessao, Usuario
 from app.schemas import LoginSenhaIn, MeOut, TrocarSenhaIn
 from app.services.audit import registrar
+from app.services.fotos import url_foto
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 log = logging.getLogger(__name__)
@@ -266,6 +267,7 @@ def me(principal: Principal = Depends(get_principal)) -> MeOut:
         papel=u.papel,
         tem_senha=u.senha_hash is not None,
         responsavel_chaves=principal.papel is Papel.admin and eh_responsavel(u.email),
+        foto_url=url_foto(u.id, u.foto_atualizada_em),
     )
 
 

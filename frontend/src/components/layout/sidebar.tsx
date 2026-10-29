@@ -15,6 +15,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { SeloV4 } from "@/components/marca/simbolo-v4";
+import { Avatar } from "@/components/avatar";
 import { useAlertasIntegracao } from "@/features/integracoes/alertas";
 import { useClienteAtual } from "@/hooks/use-cliente-atual";
 import { useLogout, useMe } from "@/hooks/use-me";
@@ -115,11 +116,6 @@ export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function iniciais(nome: string): string {
-  const p = nome.trim().split(/\s+/);
-  return ((p[0]?.[0] ?? "") + (p.length > 1 ? (p[p.length - 1]?.[0] ?? "") : "")).toUpperCase();
-}
-
 export function Usuario() {
   const me = useMe().data;
   const sair = useLogout();
@@ -127,12 +123,7 @@ export function Usuario() {
   return (
     <div className="flex items-center justify-between gap-2 px-2 py-1.5">
       <div className="flex min-w-0 items-center gap-2.5">
-        <span
-          aria-hidden
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#1f242d] text-xs font-bold text-white dark:bg-[#3d2830]"
-        >
-          {iniciais(me.nome)}
-        </span>
+        <Avatar nome={me.nome} fotoUrl={me.foto_url} />
         <span className="min-w-0">
           <strong className="block truncate text-xs font-semibold text-foreground">{me.nome}</strong>
           <span className="block truncate text-[11px] text-muted-foreground">{PAPEL_LABEL[me.papel]}</span>

@@ -3,8 +3,8 @@ export type Tema = "claro" | "escuro";
 export const CHAVE_TEMA = "v4-tema";
 
 /** Executado antes da hidratação para aplicar o tema salvo sem "piscar".
- *  Padrão: escuro, como a identidade visual da V4; o claro fica como opção salva. */
-export const SCRIPT_TEMA = `try{if(localStorage.getItem("${CHAVE_TEMA}")!=="claro")document.documentElement.classList.add("dark")}catch(e){document.documentElement.classList.add("dark")}`;
+ *  Padrão: claro; o escuro vale só para quem escolheu em Configurações. */
+export const SCRIPT_TEMA = `try{if(localStorage.getItem("${CHAVE_TEMA}")==="escuro")document.documentElement.classList.add("dark")}catch(e){}`;
 
 export function temaAtual(): Tema {
   return document.documentElement.classList.contains("dark") ? "escuro" : "claro";

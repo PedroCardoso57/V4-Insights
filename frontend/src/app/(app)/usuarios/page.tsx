@@ -7,6 +7,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { Avatar } from "@/components/avatar";
 import { Confirmar } from "@/components/confirmar";
 import { Consulta, mensagemDeErro, Vazio } from "@/components/estado";
 import { PageHeader } from "@/components/page-header";
@@ -22,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useSenhaUsuario } from "@/features/auth/api";
-import { useExcluirUsuario, useSalvarUsuario, useUsuarios, type Usuario } from "@/features/usuarios/api";
+import { useExcluirUsuario, useRemoverFoto, useSalvarUsuario, useUsuarios, type Usuario } from "@/features/usuarios/api";
 import { useMe } from "@/hooks/use-me";
 import { fmtDataHora, PAPEL_LABEL, type Papel } from "@/lib/format";
 import { pode } from "@/lib/permissoes";
@@ -78,7 +79,12 @@ export default function UsuariosPage() {
               <TableBody>
                 {d.items.map((u) => (
                   <TableRow key={u.id}>
-                    <TableCell className="font-semibold">{u.nome}</TableCell>
+                    <TableCell className="font-semibold">
+                      <span className="flex items-center gap-2.5">
+                        <Avatar nome={u.nome} fotoUrl={u.foto_url} />
+                        {u.nome}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-text-secondary">{u.email}</TableCell>
                     <TableCell>{PAPEL_LABEL[u.papel as Papel]}</TableCell>
                     <TableCell className="flex flex-wrap gap-1">
@@ -139,6 +145,8 @@ export default function UsuariosPage() {
 
 function UsuarioDialog({ alvo, proprio, onClose }: { alvo: Usuario | "novo" | null; proprio?: string; onClose: () => void }) {
   const salvar = useSalvarUsuario();
+  const removerFoto = useRemoverFoto();
+  const [semFoto, setSemFoto] = useState<string | null>(null);
   const u = alvo && alvo !== "novo" ? alvo : undefined;
   const { register, control, handleSubmit, reset, formState } = useForm<Form>({ resolver: zodResolver(schema) });
   useEffect(() => {
@@ -158,6 +166,25 @@ function UsuarioDialog({ alvo, proprio, onClose }: { alvo: Usuario | "novo" | nu
           <DialogDescription>Alterar perfil ou desativar encerra as sessões abertas do usuário.</DialogDescription>
         </DialogHeader>
         <form id="form-usuario" className="grid gap-4" onSubmit={handleSubmit(enviar)} noValidate>
+          {u?.foto_url && semFoto !== u.id && (
+            <div className="flex items-center gap-3">
+              <Avatar nome={u.nome} fotoUrl={u.foto_url} className="size-12 text-base" />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={removerFoto.isPending}
+                onClick={() =>
+                  removerFoto.mutate(u.id, {
+                    onSuccess: () => { setSemFoto(u.id); toast.success("Foto removida."); },
+                    onError: (e) => toast.error(mensagemDeErro(e)),
+                  })
+                }
+              >
+                <Trash2Icon /> Remover foto
+              </Button>
+            </div>
+          )}
           <Field id="u-nome" label="Nome" error={formState.errors.nome}>{(a) => <Input {...a} {...register("nome")} />}</Field>
           <Field id="u-email" label="E-mail corporativo" error={formState.errors.email}>
             {(a) => <Input type="email" {...a} {...register("email")} disabled={!!u} />}

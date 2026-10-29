@@ -49,6 +49,7 @@ class MeOut(BaseModel):
     tem_senha: bool = False
     # Vê e altera todas as chaves das plataformas (card de Configurações).
     responsavel_chaves: bool = False
+    foto_url: str | None = None
 
 
 class LoginSenhaIn(BaseModel):
@@ -76,6 +77,7 @@ class UsuarioOut(ORM):
     ativo: bool
     vinculado_google: bool = False
     tem_senha: bool = False
+    foto_url: str | None = None
     ultimo_login_em: datetime | None
     criado_em: datetime
 
