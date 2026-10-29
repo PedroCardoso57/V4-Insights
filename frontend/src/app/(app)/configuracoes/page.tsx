@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2Icon, MoonIcon, SunIcon, XCircleIcon } from "lucide-react";
+import { CheckCircle2Icon, MoonIcon, PlayIcon, SunIcon, XCircleIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +9,8 @@ import { PageHeader } from "@/components/page-header";
 import { SenhaCard } from "@/features/auth/senha-card";
 import { FotoCard } from "@/features/usuarios/foto-card";
 import { ChavesCard } from "@/features/configuracoes/chaves-card";
+import { useMarcarTutorial } from "@/features/tutorial/api";
+import { urlNico } from "@/components/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,6 +33,7 @@ interface Ready {
 export default function ConfiguracoesPage() {
   const me = useMe().data;
   const [tema, setTema] = useTema();
+  const tutorial = useMarcarTutorial();
   const [salvo, salvar] = useLocalStorage(PREFERENCIAS_KEY);
   const [rascunho, setPref] = useState<Preferencias | null>(null);
   const pref = rascunho ?? parsePreferencias(salvo);
@@ -111,6 +114,19 @@ export default function ConfiguracoesPage() {
           </CardContent>
         </Card>
         <SenhaCard />
+        <Card>
+          <CardHeader className="flex-col items-start">
+            <CardTitle>Tutorial</CardTitle>
+            <CardDescription>O tour guiado do Nico pelas áreas do V4 Insights, o mesmo do primeiro acesso.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element -- recorte estático pequeno, sem otimização do Next */}
+            <img src={urlNico("notebook")} alt="" className="size-16 shrink-0 object-contain" />
+            <Button variant="outline" onClick={() => tutorial.mutate(false)}>
+              <PlayIcon /> Rever tutorial
+            </Button>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="flex-col items-start">
             <CardTitle>Status operacional</CardTitle>

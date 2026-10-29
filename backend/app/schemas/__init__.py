@@ -50,6 +50,13 @@ class MeOut(BaseModel):
     # Vê e altera todas as chaves das plataformas (card de Configurações).
     responsavel_chaves: bool = False
     foto_url: str | None = None
+    # False até o colaborador concluir ou pular o tutorial de primeiro acesso.
+    tutorial_visto: bool = False
+
+
+class TutorialIn(BaseModel):
+    # True ao concluir ou pular; False para rever o tutorial no próximo acesso.
+    visto: bool
 
 
 class LoginSenhaIn(BaseModel):

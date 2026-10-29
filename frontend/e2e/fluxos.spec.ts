@@ -213,3 +213,42 @@ test("layout responsivo em 360px sem rolagem horizontal @mobile", async ({ page 
   await page.getByRole("link", { name: "Relatórios" }).click();
   await expect(page.getByRole("heading", { name: "Relatórios" })).toBeVisible();
 });
+
+test("tutorial: primeiro acesso percorre as áreas com o Nico e não volta depois de concluído", async ({ page }) => {
+  const st = { ...novoEstado("admin"), tutorialVisto: false };
+  await instalarApi(page, st);
+  await page.goto("/");
+  const tour = page.getByRole("dialog");
+  await expect(tour).toContainText("Oi, Ana! Eu sou o Nico.");
+  await tour.getByRole("button", { name: "Bora!" }).click();
+  await expect(tour).toContainText("Visão geral");
+  await tour.getByRole("button", { name: "Próximo" }).click();
+  await expect(tour).toContainText("Cliente em foco");
+  await tour.getByRole("button", { name: "Próximo" }).click();
+  await expect(tour).toContainText("Clientes");
+  await expect(page).toHaveURL(/\/clientes$/);
+  for (let i = 0; i < 10 && (await tour.getByRole("button", { name: "Próximo" }).count()); i++) {
+    await tour.getByRole("button", { name: "Próximo" }).click();
+  }
+  await expect(tour).toContainText("Pronto, agora é com você!");
+  await tour.getByRole("button", { name: "Começar" }).click();
+  await expect(page.getByTestId("tutorial")).toHaveCount(0);
+  expect(st.tutorialVisto).toBe(true);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Visão geral da carteira" })).toBeVisible();
+  await expect(page.getByTestId("tutorial")).toHaveCount(0);
+});
+
+test("tutorial: pular grava no servidor e dá para rever em Configurações @mobile", async ({ page }) => {
+  const st = { ...novoEstado("visualizador"), tutorialVisto: false };
+  await instalarApi(page, st);
+  await page.goto("/configuracoes");
+  await page.getByRole("dialog").getByRole("button", { name: "Pular", exact: true }).click();
+  await expect(page.getByTestId("tutorial")).toHaveCount(0);
+  await expect.poll(() => st.tutorialVisto).toBe(true);
+  await page.getByRole("button", { name: "Rever tutorial" }).click();
+  await expect(page.getByRole("dialog")).toContainText("Eu sou o Nico");
+  await expect.poll(() => st.tutorialVisto).toBe(false);
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("tutorial")).toHaveCount(0);
+});
