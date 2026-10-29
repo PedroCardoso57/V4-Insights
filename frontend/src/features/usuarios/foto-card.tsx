@@ -40,7 +40,7 @@ export function FotoCard() {
     <Card className="lg:col-span-2">
       <CardHeader className="flex-col items-start">
         <CardTitle>Seu perfil</CardTitle>
-        <CardDescription>Sua foto aparece no menu e para os administradores na tela de Usuários.</CardDescription>
+        <CardDescription>Sua foto aparece no menu e para os administradores na tela de Usuários. Enquanto você não envia uma, quem aparece é o Nico.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-wrap items-center gap-5">
         <button

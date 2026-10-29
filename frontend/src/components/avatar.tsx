@@ -10,10 +10,14 @@ export function iniciais(nome: string): string {
   return ((p[0]?.[0] ?? "") + (p.length > 1 ? (p[p.length - 1]?.[0] ?? "") : "")).toUpperCase();
 }
 
-/** Foto de perfil do colaborador; sem foto (ou se ela falhar), mostra as iniciais. */
+/** Avatar padrão de quem ainda não enviou foto: o Nico, mascote da V4. */
+export const AVATAR_PADRAO = "/mascote/avatar-nico.webp";
+
+/** Foto de perfil do colaborador; sem foto, mostra o Nico; se a imagem falhar, as iniciais. */
 export function Avatar({ nome, fotoUrl, className }: { nome: string; fotoUrl?: string | null; className?: string }) {
+  const src = fotoUrl ? `${API_BASE}${fotoUrl}` : AVATAR_PADRAO;
   const [falhou, setFalhou] = useState<string | null>(null);
-  const mostrarFoto = !!fotoUrl && falhou !== fotoUrl;
+  const mostrarFoto = falhou !== src;
   return (
     <span
       aria-hidden
@@ -24,7 +28,7 @@ export function Avatar({ nome, fotoUrl, className }: { nome: string; fotoUrl?: s
     >
       {mostrarFoto ? (
         // eslint-disable-next-line @next/next/no-img-element -- imagem autenticada servida pela API, sem otimização do Next
-        <img src={`${API_BASE}${fotoUrl}`} alt="" className="size-full object-cover" onError={() => setFalhou(fotoUrl)} />
+        <img src={src} alt="" className="size-full object-cover" onError={() => setFalhou(src)} />
       ) : (
         iniciais(nome)
       )}
