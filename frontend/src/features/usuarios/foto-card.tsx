@@ -4,7 +4,7 @@ import { CameraIcon, Trash2Icon } from "lucide-react";
 import { useRef } from "react";
 import { toast } from "sonner";
 
-import { Avatar } from "@/components/avatar";
+import { Avatar, NICOS, urlNico } from "@/components/avatar";
 import { mensagemDeErro } from "@/components/estado";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +20,22 @@ export function FotoCard() {
   const remover = useRemoverFoto();
   if (!me) return null;
 
+  const enviarArquivo = (arquivo: File, sucesso: string) =>
+    enviar.mutate(
+      { id: me.id, arquivo },
+      { onSuccess: () => toast.success(sucesso), onError: (e) => toast.error(mensagemDeErro(e)) },
+    );
+
+  const escolherNico = async (id: string) => {
+    try {
+      const r = await fetch(urlNico(id));
+      if (!r.ok) throw new Error();
+      enviarArquivo(new File([await r.blob()], `${id}.webp`, { type: "image/webp" }), "Agora o Nico é a sua foto.");
+    } catch {
+      toast.error("Não foi possível carregar essa pose do Nico.");
+    }
+  };
+
   const escolher = (arquivo: File | undefined) => {
     if (!arquivo) return;
     if (!(FOTO_TIPOS as readonly string[]).includes(arquivo.type)) {
@@ -30,17 +46,14 @@ export function FotoCard() {
       toast.error("A imagem deve ter no máximo 8 MB.");
       return;
     }
-    enviar.mutate(
-      { id: me.id, arquivo },
-      { onSuccess: () => toast.success("Foto atualizada."), onError: (e) => toast.error(mensagemDeErro(e)) },
-    );
+    enviarArquivo(arquivo, "Foto atualizada.");
   };
 
   return (
     <Card className="lg:col-span-2">
       <CardHeader className="flex-col items-start">
         <CardTitle>Seu perfil</CardTitle>
-        <CardDescription>Sua foto aparece no menu e para os administradores na tela de Usuários. Enquanto você não envia uma, quem aparece é o Nico.</CardDescription>
+        <CardDescription>Sua foto aparece no menu e para os administradores na tela de Usuários. Enquanto você não escolhe uma, quem aparece é o Nico.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-wrap items-center gap-5">
         <button
@@ -80,6 +93,25 @@ export function FotoCard() {
             )}
           </div>
           <span className="text-[11px] text-muted-foreground">JPG, PNG ou WEBP até 8 MB. Cortamos no centro em formato quadrado.</span>
+        </div>
+        <div className="grid w-full gap-2 border-t pt-4">
+          <span className="text-xs font-semibold text-text-secondary">Ou escolha um Nico</span>
+          <div className="flex flex-wrap gap-2">
+            {NICOS.map((n) => (
+              <button
+                key={n.id}
+                type="button"
+                title={n.label}
+                aria-label={`Usar ${n.label} como foto`}
+                disabled={enviar.isPending}
+                onClick={() => escolherNico(n.id)}
+                className="cursor-pointer rounded-xl border bg-subtle p-1.5 transition-colors hover:border-primary hover:bg-primary-soft focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element -- miniatura estática */}
+                <img src={urlNico(n.id)} alt="" className="size-14 object-contain" />
+              </button>
+            ))}
+          </div>
         </div>
         <input
           ref={input}
