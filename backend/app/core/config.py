@@ -9,6 +9,11 @@ from typing import Annotated, Literal
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+# O Google desativa cada versão da Google Ads API cerca de um ano depois do lançamento
+# (https://developers.google.com/google-ads/api/docs/sunset-dates).
+GOOGLE_ADS_API_VERSION_PADRAO = "v25"
+GOOGLE_ADS_API_VERSION_MINIMA = 23
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
@@ -52,7 +57,7 @@ class Settings(BaseSettings):
     google_ads_client_secret: str | None = None
     google_ads_developer_token: str | None = None
     google_ads_login_customer_id: str | None = None
-    google_ads_api_version: str = "v18"
+    google_ads_api_version: str = GOOGLE_ADS_API_VERSION_PADRAO
 
     # LinkedIn Marketing API (app com o produto Advertising API aprovado)
     linkedin_client_id: str | None = None
@@ -118,6 +123,19 @@ class Settings(BaseSettings):
     def _split_keys(cls, v: object) -> object:
         if isinstance(v, str):
             return [k.strip() for k in v.split(",") if k.strip()]
+        return v
+
+    @field_validator("google_ads_api_version", mode="before")
+    @classmethod
+    def _google_ads_versao_ativa(cls, v: object) -> object:
+        # Vazia ou já desativada pelo Google (ex.: o v18 de .env antigos) usa a padrão.
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return GOOGLE_ADS_API_VERSION_PADRAO
+        if isinstance(v, str):
+            num = v.strip().lower().removeprefix("v")
+            if num.isdigit() and int(num) < GOOGLE_ADS_API_VERSION_MINIMA:
+                return GOOGLE_ADS_API_VERSION_PADRAO
+            return v.strip()
         return v
 
     @field_validator("encryption_key")
