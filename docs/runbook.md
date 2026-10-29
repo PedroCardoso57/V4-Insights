@@ -60,6 +60,22 @@ APP_VERSION=vX.Y.Z docker compose up --build -d   # migrate roda antes de api/wo
 docker compose ps                                  # todos healthy
 ```
 
+## Páginas de estado (mascote V4)
+
+O Caddy serve sozinho as páginas do mascote, então elas aparecem mesmo com o frontend e a API parados
+(arquivos em `infra/proxy/paginas/`, montados em `/srv/paginas`).
+
+- **Fora do ar:** automático. Quando o frontend ou a API respondem 502/503/504, quem navega vê
+  "Sistema fora do ar"; chamadas de API e health checks recebem só o código. A página recarrega
+  sozinha quando o site volta.
+- **Manutenção:** liga e desliga sem reiniciar nada:
+  ```bash
+  touch infra/proxy/paginas/manutencao.on   # liga: todo o site responde 503 com "Sistema em manutenção"
+  rm infra/proxy/paginas/manutencao.on      # desliga
+  ```
+  `/health/*` continua passando, para o monitoramento não alarmar.
+- **Em construção:** rota do app `/em-construcao`; aponte para ela itens de menu ainda não prontos.
+
 ## Rollback
 
 1. Se a versão trouxe migrations, reverta-as **antes** de voltar o código:

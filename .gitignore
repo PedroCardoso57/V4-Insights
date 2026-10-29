@@ -31,3 +31,6 @@ backups/
 
 # dump local do Redis
 dump.rdb
+
+# Liga o modo manutenção na VPS (não versionar)
+infra/proxy/paginas/manutencao.on

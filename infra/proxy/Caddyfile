@@ -14,22 +14,69 @@
 		-Server
 	}
 
-	# API versionada (/api/v1) e health checks vão ao FastAPI sem reescrita de caminho.
-	handle /api/* {
-		reverse_proxy api:8000
-	}
-	handle /health/* {
-		reverse_proxy api:8000
-	}
-	# Documentação interativa só existe fora de produção (ENVIRONMENT != production).
-	handle /docs* {
-		reverse_proxy api:8000
-	}
-	handle /openapi.json {
-		reverse_proxy api:8000
+	# Arte das páginas de estado (fora do ar / manutenção), servida pelo próprio Caddy:
+	# continua no ar mesmo com o frontend e a API parados.
+	handle_path /_estado/* {
+		root * /srv/paginas
+		file_server
 	}
 
+	# Modo manutenção: com o arquivo infra/proxy/paginas/manutencao.on presente,
+	# todo o site responde 503 com a página do mascote em manutenção.
+	@manutencao {
+		file {
+			root /srv/paginas
+			try_files /manutencao.on
+		}
+		not path /health/*
+	}
+	handle @manutencao {
+		header Retry-After 300
+		header Cache-Control no-store
+		root * /srv/paginas
+		rewrite * /manutencao.html
+		file_server {
+			status 503
+		}
+	}
+
+	# Fora da manutenção, o roteamento normal (aninhado para a manutenção ter prioridade
+	# sobre os handles com caminho, que o Caddy ordena antes dos matchers nomeados).
 	handle {
-		reverse_proxy frontend:3000
+		# API versionada (/api/v1) e health checks vão ao FastAPI sem reescrita de caminho.
+		handle /api/* {
+			reverse_proxy api:8000
+		}
+		handle /health/* {
+			reverse_proxy api:8000
+		}
+		# Documentação interativa só existe fora de produção (ENVIRONMENT != production).
+		handle /docs* {
+			reverse_proxy api:8000
+		}
+		handle /openapi.json {
+			reverse_proxy api:8000
+		}
+
+		handle {
+			reverse_proxy frontend:3000
+		}
+	}
+
+	# Frontend ou API fora do ar: quem navega vê o mascote "fora do ar";
+	# chamadas de API e health checks recebem só o código de erro.
+	# (Os códigos ficam no matcher: no Caddy 2.8, "handle_errors 502 503 504" descarta
+	# os matchers das diretivas internas ao converter a configuração.)
+	handle_errors {
+		@navegador {
+			expression `{err.status_code} in [502, 503, 504]`
+			not path /api/* /health/*
+			header_regexp Accept text/html
+		}
+		header @navegador Cache-Control no-store
+		rewrite @navegador /fora-do-ar.html
+		file_server @navegador {
+			root /srv/paginas
+		}
 	}
 }

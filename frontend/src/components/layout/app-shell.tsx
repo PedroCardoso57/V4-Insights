@@ -11,9 +11,9 @@ import { Sidebar, SidebarConteudo } from "@/components/layout/sidebar";
 import { StatusAtualizacao } from "@/components/layout/status-atualizacao";
 import { TemaToggle } from "@/components/layout/tema-toggle";
 import { ErroEstado } from "@/components/estado";
+import { CarregandoMascote } from "@/components/mascote/carregando-mascote";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useMe } from "@/hooks/use-me";
 import { ApiError } from "@/services/api/client";
 
@@ -29,13 +29,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   if (me.isPending || semSessao) {
     return (
-      <div className="flex min-h-screen" aria-busy="true">
-        <div className="hidden w-64 border-r bg-sidebar lg:block" />
-        <div className="flex-1 space-y-4 p-8">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-28 w-full rounded-xl" />
-          <Skeleton className="h-72 w-full rounded-xl" />
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-background p-4" aria-busy="true">
+        <CarregandoMascote />
       </div>
     );
   }
