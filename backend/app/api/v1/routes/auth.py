@@ -25,7 +25,7 @@ from app.core.sessions import (
 )
 from app.db.session import get_db
 from app.models import OAuthState, Papel, Sessao, Usuario
-from app.schemas import LoginSenhaIn, MeOut, TrocarSenhaIn
+from app.schemas import LoginSenhaIn, MeOut, TrocarSenhaIn, TutorialIn
 from app.services.audit import registrar
 from app.services.fotos import url_foto
 
@@ -268,7 +268,24 @@ def me(principal: Principal = Depends(get_principal)) -> MeOut:
         tem_senha=u.senha_hash is not None,
         responsavel_chaves=principal.papel is Papel.admin and eh_responsavel(u.email),
         foto_url=url_foto(u.id, u.foto_atualizada_em),
+        tutorial_visto=u.tutorial_visto_em is not None,
     )
+
+
+@router.put("/tutorial", status_code=204)
+def marcar_tutorial(
+    body: TutorialIn,
+    principal: Principal = Depends(get_principal),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Marca o tutorial de primeiro acesso como visto (concluído ou pulado) ou o reabre."""
+    u = db.merge(principal.usuario)
+    if body.visto:
+        u.tutorial_visto_em = u.tutorial_visto_em or now()
+    else:
+        u.tutorial_visto_em = None
+    db.commit()
+    return Response(status_code=204)
 
 
 @router.post("/logout", status_code=204)

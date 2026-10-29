@@ -81,6 +81,7 @@ test("configurações: responsável cadastra as chaves de uma plataforma", async
   await expect(meta.getByText("configurado", { exact: true })).toBeVisible();
   await expect(meta.getByLabel("Chave secreta do app")).toHaveValue("");
   await expect(page.getByRole("form", { name: "Login com Google" }).getByText("Vem do arquivo .env").first()).toBeVisible();
+  await expect(page.getByText("Status operacional", { exact: true })).toBeVisible();
 });
 
 for (const papel of ["admin", "gestor"] as const) {
@@ -212,4 +213,50 @@ test("layout responsivo em 360px sem rolagem horizontal @mobile", async ({ page 
   await page.getByRole("button", { name: "Abrir menu" }).click();
   await page.getByRole("link", { name: "Relatórios" }).click();
   await expect(page.getByRole("heading", { name: "Relatórios" })).toBeVisible();
+});
+
+test("tutorial: primeiro acesso percorre as áreas com o Nico e não volta depois de concluído", async ({ page }) => {
+  const st = { ...novoEstado("admin"), tutorialVisto: false };
+  await instalarApi(page, st);
+  await page.goto("/");
+  const tour = page.getByRole("dialog");
+  await expect(tour).toContainText("Oi, Ana! Eu sou o Nico.");
+  await tour.getByRole("button", { name: "Bora!" }).click();
+  await expect(tour).toContainText("Visão geral");
+  await tour.getByRole("button", { name: "Próximo" }).click();
+  await expect(tour).toContainText("Cliente em foco");
+  await tour.getByRole("button", { name: "Próximo" }).click();
+  await expect(tour).toContainText("Clientes");
+  await expect(page).toHaveURL(/\/clientes$/);
+  for (let i = 0; i < 10 && (await tour.getByRole("button", { name: "Próximo" }).count()); i++) {
+    await tour.getByRole("button", { name: "Próximo" }).click();
+  }
+  await expect(tour).toContainText("Pronto, agora é com você!");
+  await tour.getByRole("button", { name: "Começar" }).click();
+  await expect(page.getByTestId("tutorial")).toHaveCount(0);
+  expect(st.tutorialVisto).toBe(true);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Visão geral da carteira" })).toBeVisible();
+  await expect(page.getByTestId("tutorial")).toHaveCount(0);
+});
+
+test("tutorial: pular grava no servidor e não volta mais @mobile", async ({ page }) => {
+  const st = { ...novoEstado("visualizador"), tutorialVisto: false };
+  await instalarApi(page, st);
+  await page.goto("/configuracoes");
+  await expect(page.getByRole("dialog")).toContainText("Sou o Nico do V4 Insights");
+  await page.getByRole("dialog").getByRole("button", { name: "Pular", exact: true }).click();
+  await expect(page.getByTestId("tutorial")).toHaveCount(0);
+  await expect.poll(() => st.tutorialVisto).toBe(true);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Configurações" })).toBeVisible();
+  await expect(page.getByTestId("tutorial")).toHaveCount(0);
+});
+
+test("configurações: status operacional só para o responsável", async ({ page }) => {
+  await instalarApi(page, novoEstado("admin"));
+  await page.goto("/configuracoes");
+  await expect(page.getByRole("heading", { name: "Configurações" })).toBeVisible();
+  await expect(page.getByText("Status operacional", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Aparência", { exact: true })).toHaveCount(0);
 });

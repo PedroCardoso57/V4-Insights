@@ -13,6 +13,7 @@ import { TemaToggle } from "@/components/layout/tema-toggle";
 import { ErroEstado } from "@/components/estado";
 import { CarregandoMascote } from "@/components/mascote/carregando-mascote";
 import { Button } from "@/components/ui/button";
+import { Tutorial } from "@/features/tutorial/tutorial";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useMe } from "@/hooks/use-me";
 import { ApiError } from "@/services/api/client";
@@ -95,6 +96,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="font-mono-num">Fontes: Meta, Google, LinkedIn &amp; TikTok Ads · uso exclusivo de colaboradores</span>
         </footer>
       </div>
+      <Tutorial />
     </div>
   );
 }

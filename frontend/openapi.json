@@ -1358,6 +1358,11 @@
             "default": false,
             "title": "Tem Senha",
             "type": "boolean"
+          },
+          "tutorial_visto": {
+            "default": false,
+            "title": "Tutorial Visto",
+            "type": "boolean"
           }
         },
         "required": [
@@ -2375,6 +2380,19 @@
         "title": "TrocarSenhaIn",
         "type": "object"
       },
+      "TutorialIn": {
+        "properties": {
+          "visto": {
+            "title": "Visto",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "visto"
+        ],
+        "title": "TutorialIn",
+        "type": "object"
+      },
       "UsuarioCreate": {
         "properties": {
           "ativo": {
@@ -3281,6 +3299,91 @@
           }
         },
         "summary": "Trocar Senha",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/tutorial": {
+      "put": {
+        "description": "Marca o tutorial de primeiro acesso como visto (concluído ou pulado) ou o reabre.",
+        "operationId": "marcar_tutorial_api_v1_auth_tutorial_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TutorialIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "CONFLICT"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "RATE_LIMITED"
+          }
+        },
+        "summary": "Marcar Tutorial",
         "tags": [
           "auth"
         ]

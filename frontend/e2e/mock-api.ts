@@ -19,6 +19,8 @@ export interface Estado {
   usuarios: Obj[];
   chaves: Record<string, string>;
   responsavel: boolean;
+  /** Tutorial de primeiro acesso já visto: os demais fluxos não passam por ele. */
+  tutorialVisto: boolean;
 }
 
 export function novoEstado(papel: Papel | null = "admin"): Estado {
@@ -44,6 +46,7 @@ export function novoEstado(papel: Papel | null = "admin"): Estado {
     ],
     chaves: { google_oidc_client_id: "id-do-env", google_oidc_client_secret: "segredo-do-env" },
     responsavel: false,
+    tutorialVisto: true,
   };
 }
 
@@ -74,7 +77,11 @@ export async function instalarApi(page: Page, st: Estado) {
 
     if (p === "/auth/me") {
       if (!st.papel) return erro(route, 401, "UNAUTHENTICATED", "Sessão inválida ou expirada");
-      return json(route, { id: "u1", nome: "Ana Lima", email: "ana@v4.com", papel: st.papel, responsavel_chaves: st.responsavel });
+      return json(route, { id: "u1", nome: "Ana Lima", email: "ana@v4.com", papel: st.papel, responsavel_chaves: st.responsavel, tutorial_visto: st.tutorialVisto });
+    }
+    if (p === "/auth/tutorial" && m === "PUT" && st.papel) {
+      st.tutorialVisto = body.visto === true;
+      return route.fulfill({ status: 204 });
     }
     if (p === "/auth/logout") return route.fulfill({ status: 204 });
     if (p === "/auth/login" && m === "POST") {

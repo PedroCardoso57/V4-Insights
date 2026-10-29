@@ -90,6 +90,7 @@ export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
                 <Link
                   href={href}
                   onClick={onNavigate}
+                  data-tour={`nav:${label}`}
                   aria-current={ativo ? "page" : undefined}
                   className={cn(
                     "flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-text-secondary transition-colors hover:bg-subtle hover:text-foreground",

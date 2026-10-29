@@ -135,6 +135,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/tutorial": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Marcar Tutorial
+         * @description Marca o tutorial de primeiro acesso como visto (concluído ou pulado) ou o reabre.
+         */
+        put: operations["marcar_tutorial_api_v1_auth_tutorial_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clientes": {
         parameters: {
             query?: never;
@@ -1208,6 +1228,11 @@ export interface components {
              * @default false
              */
             tem_senha: boolean;
+            /**
+             * Tutorial Visto
+             * @default false
+             */
+            tutorial_visto: boolean;
         };
         /** MembroOut */
         MembroOut: {
@@ -1585,6 +1610,11 @@ export interface components {
             nova_senha: string;
             /** Senha Atual */
             senha_atual?: string | null;
+        };
+        /** TutorialIn */
+        TutorialIn: {
+            /** Visto */
+            visto: boolean;
         };
         /** UsuarioCreate */
         UsuarioCreate: {
@@ -2157,6 +2187,82 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["TrocarSenhaIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description CONFLICT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description RATE_LIMITED */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    marcar_tutorial_api_v1_auth_tutorial_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TutorialIn"];
             };
         };
         responses: {

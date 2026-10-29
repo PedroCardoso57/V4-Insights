@@ -142,6 +142,8 @@ class Usuario(Base):
     excluido_em: Mapped[datetime | None] = _ts(nullable=True)
     # 0007: preenchido quando há foto em usuario_fotos; também versiona a URL da imagem.
     foto_atualizada_em: Mapped[datetime | None] = _ts(nullable=True)
+    # 0008: quando concluiu ou pulou o tutorial de primeiro acesso; vazio = mostrar.
+    tutorial_visto_em: Mapped[datetime | None] = _ts(nullable=True)
 
     perfil: Mapped[Perfil] = relationship(lazy="joined")
 
