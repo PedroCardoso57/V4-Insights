@@ -81,6 +81,7 @@ test("configurações: responsável cadastra as chaves de uma plataforma", async
   await expect(meta.getByText("configurado", { exact: true })).toBeVisible();
   await expect(meta.getByLabel("Chave secreta do app")).toHaveValue("");
   await expect(page.getByRole("form", { name: "Login com Google" }).getByText("Vem do arquivo .env").first()).toBeVisible();
+  await expect(page.getByText("Status operacional", { exact: true })).toBeVisible();
 });
 
 for (const papel of ["admin", "gestor"] as const) {
@@ -239,16 +240,23 @@ test("tutorial: primeiro acesso percorre as áreas com o Nico e não volta depoi
   await expect(page.getByTestId("tutorial")).toHaveCount(0);
 });
 
-test("tutorial: pular grava no servidor e dá para rever em Configurações @mobile", async ({ page }) => {
+test("tutorial: pular grava no servidor e não volta mais @mobile", async ({ page }) => {
   const st = { ...novoEstado("visualizador"), tutorialVisto: false };
   await instalarApi(page, st);
   await page.goto("/configuracoes");
+  await expect(page.getByRole("dialog")).toContainText("Sou o Nico do V4 Insights");
   await page.getByRole("dialog").getByRole("button", { name: "Pular", exact: true }).click();
   await expect(page.getByTestId("tutorial")).toHaveCount(0);
   await expect.poll(() => st.tutorialVisto).toBe(true);
-  await page.getByRole("button", { name: "Rever tutorial" }).click();
-  await expect(page.getByRole("dialog")).toContainText("Eu sou o Nico");
-  await expect.poll(() => st.tutorialVisto).toBe(false);
-  await page.keyboard.press("Escape");
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Configurações" })).toBeVisible();
   await expect(page.getByTestId("tutorial")).toHaveCount(0);
+});
+
+test("configurações: status operacional só para o responsável", async ({ page }) => {
+  await instalarApi(page, novoEstado("admin"));
+  await page.goto("/configuracoes");
+  await expect(page.getByRole("heading", { name: "Configurações" })).toBeVisible();
+  await expect(page.getByText("Status operacional", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Aparência", { exact: true })).toHaveCount(0);
 });

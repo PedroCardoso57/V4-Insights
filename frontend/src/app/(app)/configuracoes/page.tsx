@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2Icon, MoonIcon, PlayIcon, SunIcon, XCircleIcon } from "lucide-react";
+import { CheckCircle2Icon, XCircleIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -9,8 +9,6 @@ import { PageHeader } from "@/components/page-header";
 import { SenhaCard } from "@/features/auth/senha-card";
 import { FotoCard } from "@/features/usuarios/foto-card";
 import { ChavesCard } from "@/features/configuracoes/chaves-card";
-import { useMarcarTutorial } from "@/features/tutorial/api";
-import { urlNico } from "@/components/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,8 +18,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useMe } from "@/hooks/use-me";
 import { PAPEL_LABEL } from "@/lib/format";
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import { useTema } from "@/hooks/use-tema";
-import { cn } from "@/lib/utils";
 import { parsePreferencias, PREFERENCIAS_KEY, type Preferencias } from "@/lib/preferencias";
 import { API_BASE } from "@/services/api/client";
 
@@ -32,8 +28,6 @@ interface Ready {
 
 export default function ConfiguracoesPage() {
   const me = useMe().data;
-  const [tema, setTema] = useTema();
-  const tutorial = useMarcarTutorial();
   const [salvo, salvar] = useLocalStorage(PREFERENCIAS_KEY);
   const [rascunho, setPref] = useState<Preferencias | null>(null);
   const pref = rascunho ?? parsePreferencias(salvo);
@@ -41,41 +35,15 @@ export default function ConfiguracoesPage() {
     queryKey: ["health"],
     queryFn: async () => (await fetch(`${API_BASE}/health/ready`)).json() as Promise<Ready>,
     refetchInterval: 30_000,
+    // Só o responsável pela plataforma vê o status operacional.
+    enabled: !!me?.responsavel_chaves,
   });
 
   return (
     <>
-      <PageHeader titulo="Configurações" descricao="Preferências deste navegador e status operacional da plataforma." />
+      <PageHeader titulo="Configurações" descricao="Seu perfil, sua senha e as preferências deste navegador." />
       <div className="grid gap-5 lg:grid-cols-2">
         <FotoCard />
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex-col items-start">
-            <CardTitle>Aparência</CardTitle>
-            <CardDescription>Tema da interface neste navegador.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div role="radiogroup" aria-label="Tema" className="grid max-w-md grid-cols-2 gap-3">
-              {([
-                { id: "claro", label: "Claro", icon: SunIcon },
-                { id: "escuro", label: "Escuro", icon: MoonIcon },
-              ] as const).map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  role="radio"
-                  aria-checked={tema === id}
-                  onClick={() => setTema(id)}
-                  className={cn(
-                    "flex cursor-pointer items-center gap-2.5 rounded-xl border p-3 text-left text-[13px] font-medium transition-colors hover:bg-subtle",
-                    tema === id && "border-primary bg-primary-soft text-primary-ink hover:bg-primary-soft",
-                  )}
-                >
-                  <Icon className="size-4" aria-hidden /> {label}
-                </button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
         <Card>
           <CardHeader className="flex-col items-start">
             <CardTitle>Preferências</CardTitle>
@@ -114,46 +82,35 @@ export default function ConfiguracoesPage() {
           </CardContent>
         </Card>
         <SenhaCard />
-        <Card>
-          <CardHeader className="flex-col items-start">
-            <CardTitle>Tutorial</CardTitle>
-            <CardDescription>O tour guiado do Nico pelas áreas do V4 Insights, o mesmo do primeiro acesso.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex items-center gap-4">
-            {/* eslint-disable-next-line @next/next/no-img-element -- recorte estático pequeno, sem otimização do Next */}
-            <img src={urlNico("notebook")} alt="" className="size-16 shrink-0 object-contain" />
-            <Button variant="outline" onClick={() => tutorial.mutate(false)}>
-              <PlayIcon /> Rever tutorial
-            </Button>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex-col items-start">
-            <CardTitle>Status operacional</CardTitle>
-            <CardDescription>Disponibilidade dos serviços da plataforma.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 text-sm">
-            {saude.isPending ? (
-              <Skeleton className="h-16 rounded-xl" />
-            ) : saude.isError || !saude.data ? (
-              <p className="flex items-center gap-2 text-destructive"><XCircleIcon className="size-4" /> API indisponível</p>
-            ) : (
-              <ul className="grid gap-2">
-                {Object.entries(saude.data.checks).map(([k, v]) => (
-                  <li key={k} className="flex items-center gap-2">
-                    {v === "ok" ? <CheckCircle2Icon className="size-4 text-success" /> : <XCircleIcon className="size-4 text-destructive" />}
-                    {k === "database" ? "Banco de dados" : k === "redis" ? "Fila de processamento" : k}: {v === "ok" ? "operacional" : "indisponível"}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {me && (
-              <p className="text-muted-foreground">
-                Sessão: {me.email} · perfil {PAPEL_LABEL[me.papel]}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+        {me?.responsavel_chaves && (
+          <Card>
+            <CardHeader className="flex-col items-start">
+              <CardTitle>Status operacional</CardTitle>
+              <CardDescription>Disponibilidade dos serviços da plataforma.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-3 text-sm">
+              {saude.isPending ? (
+                <Skeleton className="h-16 rounded-xl" />
+              ) : saude.isError || !saude.data ? (
+                <p className="flex items-center gap-2 text-destructive"><XCircleIcon className="size-4" /> API indisponível</p>
+              ) : (
+                <ul className="grid gap-2">
+                  {Object.entries(saude.data.checks).map(([k, v]) => (
+                    <li key={k} className="flex items-center gap-2">
+                      {v === "ok" ? <CheckCircle2Icon className="size-4 text-success" /> : <XCircleIcon className="size-4 text-destructive" />}
+                      {k === "database" ? "Banco de dados" : k === "redis" ? "Fila de processamento" : k}: {v === "ok" ? "operacional" : "indisponível"}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {me && (
+                <p className="text-muted-foreground">
+                  Sessão: {me.email} · perfil {PAPEL_LABEL[me.papel]}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
         {me?.responsavel_chaves && <ChavesCard />}
       </div>
     </>

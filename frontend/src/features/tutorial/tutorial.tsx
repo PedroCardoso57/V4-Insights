@@ -29,7 +29,7 @@ export function passosDoTutorial(nome: string, papel: Papel | undefined, cliente
   const passos: (Passo | false)[] = [
     {
       titulo: `Oi, ${primeiroNome}! Eu sou o Nico.`,
-      texto: "Sou o mascote da V4 e vou te mostrar o V4 Insights em menos de um minuto. Dá para pular quando quiser e rever depois em Configurações.",
+      texto: "Sou o Nico do V4 Insights e vou te mostrar como o sistema funciona em menos de um minuto. Dá para pular quando quiser.",
       nico: "parado",
     },
     {
@@ -84,14 +84,14 @@ export function passosDoTutorial(nome: string, papel: Papel | undefined, cliente
     },
     {
       titulo: "Configurações e seu perfil",
-      texto: "Troque sua foto (pode ser um Nico!), a senha, o tema e as preferências dos dashboards. É aqui também que você revê este tutorial.",
+      texto: "Troque sua foto (pode ser um Nico!), a senha, o tema e as preferências dos dashboards.",
       nico: "engrenagem",
       alvo: "nav:Configurações",
       rota: "/configuracoes",
     },
     {
       titulo: "Pronto, agora é com você!",
-      texto: "Bom trabalho! Se bater alguma dúvida, é só voltar em Configurações e rever o tour.",
+      texto: "Bom trabalho! Agora é só explorar o V4 Insights.",
       nico: "comemorando",
       rota: "/",
     },
