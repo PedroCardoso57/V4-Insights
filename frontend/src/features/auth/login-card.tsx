@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { SeloV4 } from "@/components/marca/simbolo-v4";
+import { usePreCarregarNico } from "@/components/mascote/nico-andando";
 import { useLoginSenha } from "@/features/auth/api";
 import { NicoEntrando, PASSAGEM_MS, type EstadoEntrada } from "@/features/auth/nico-entrando";
 import { consultaMe } from "@/hooks/use-me";
@@ -78,6 +79,7 @@ function LogoGoogle() {
 export function LoginCard() {
   const erro = useSearchParams().get("erro");
   const router = useRouter();
+  usePreCarregarNico();
   const qc = useQueryClient();
   const login = useLoginSenha();
   const [esqueci, setEsqueci] = useState(false);
