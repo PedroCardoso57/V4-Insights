@@ -163,6 +163,24 @@
   letter-spacing: -0.01em;
 }
 
+/* Folha (dialog no celular) e menu lateral entram deslizando. */
+@utility folha-celular {
+  animation: folha-sobe 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@utility menu-desliza {
+  animation: menu-entra 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes folha-sobe {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes menu-entra {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
 @utility skeleton-shimmer {
   background: linear-gradient(90deg, var(--surface-subtle) 0%, var(--line) 50%, var(--surface-subtle) 100%);
   background-size: 200% 100%;
@@ -345,11 +363,84 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .folha-celular,
+  .max-sm\:folha-celular,
+  .menu-desliza,
   .nico-pula,
   .nico-entra,
   .nico-chao,
   .nico-surge,
   .nico-surge-fundo {
     animation: none;
+  }
+}
+
+/* Tabelas no celular: cada linha vira um cartão. A primeira célula é o título; as demais formam
+   uma grade de duas colunas com o rótulo da coluna acima do valor (data-label, ver ui/table.tsx).
+   Células sem rótulo (ações) ocupam a linha inteira, alinhadas à direita. */
+@media (max-width: 639.98px) {
+  .tabela-cartoes {
+    overflow-x: visible;
+  }
+  .tabela-cartoes > table,
+  .tabela-cartoes > table > tbody {
+    display: block;
+  }
+  .tabela-cartoes > table > thead {
+    display: none;
+  }
+  .tabela-cartoes > table > tbody > tr {
+    display: grid;
+    grid-template-columns: repeat(var(--cartao-colunas, 2), minmax(0, 1fr));
+    gap: 0.625rem 1rem;
+    position: relative;
+    padding: 0.875rem 1rem;
+  }
+  /* Ação de um botão só (ex.: excluir): fica no canto do cartão, ao lado do título. */
+  .tabela-cartoes > table > tbody > tr > td[data-canto] {
+    position: absolute;
+    top: 0.625rem;
+    right: 0.5rem;
+  }
+  .tabela-cartoes > table > tbody > tr:has(> td[data-canto]) {
+    padding-right: 2.75rem;
+  }
+  .tabela-cartoes > table > tbody > tr > td {
+    display: block;
+    min-width: 0;
+    max-width: none;
+    padding: 0;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .tabela-cartoes > table > tbody > tr > td[data-largo] {
+    grid-column: 1 / -1;
+  }
+  .tabela-cartoes > table > tbody > tr > td:first-child,
+  .tabela-cartoes > table > tbody > tr > td[data-cheia] {
+    grid-column: 1 / -1;
+    font-size: 0.875rem;
+  }
+  .tabela-cartoes > table > tbody > tr > td[data-label]:not(:first-child)::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.125rem;
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .tabela-cartoes > table > tbody > tr > td[data-label=""]:not(:first-child) {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+  .tabela-cartoes > table > tbody > tr > td[data-label=""]:not(:first-child)::before {
+    content: none;
   }
 }

@@ -66,7 +66,7 @@ export function Equipe({ clienteId, papel }: { clienteId: string; papel?: Schema
               {d.items.map((m) => (
                 <TableRow key={m.id}>
                   <TableCell className="font-semibold">{m.nome} {!m.ativo && <Badge>inativo</Badge>}</TableCell>
-                  <TableCell>{m.email}</TableCell>
+                  <TableCell data-largo="">{m.email}</TableCell>
                   <TableCell>{PAPEL_LABEL[m.papel as Schemas["Papel"]]}</TableCell>
                   <TableCell>{fmtData(m.atribuido_em)}</TableCell>
                   {gerir && (

@@ -160,7 +160,7 @@ export default function InicioPage() {
                         <Badge ponto variant="success">{c.status}</Badge>
                       </TableCell>
                       <TableCell className="font-mono-num text-xs text-muted-foreground">{fmtData(c.atualizado_em)}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" data-label="">
                         <Link
                           href={`/clientes/${c.id}/dashboards`}
                           className="inline-flex items-center gap-1 text-xs font-medium text-text-secondary hover:text-foreground"

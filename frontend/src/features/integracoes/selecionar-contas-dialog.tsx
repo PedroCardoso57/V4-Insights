@@ -92,7 +92,7 @@ function Conteudo({ integracao, onClose }: { integracao: Integracao; onClose: ()
                 <TableBody>
                   {d.items.map((c) => (
                     <TableRow key={c.conta_externa_id}>
-                      <TableCell>
+                      <TableCell data-label="" data-canto="">
                         <Checkbox
                           aria-label={`Selecionar ${c.nome}`}
                           checked={marcadas.has(c.conta_externa_id)}
@@ -108,7 +108,7 @@ function Conteudo({ integracao, onClose }: { integracao: Integracao; onClose: ()
                         {c.nome} <span className="text-xs text-muted-foreground">{c.conta_externa_id}</span>
                       </TableCell>
                       <TableCell>{c.moeda ?? "—"}</TableCell>
-                      <TableCell>
+                      <TableCell data-largo="">
                         <Input
                           aria-label={`Ações de conversão de ${c.nome}`}
                           placeholder={PLACEHOLDER_CONVERSAO[integracao.plataforma]}

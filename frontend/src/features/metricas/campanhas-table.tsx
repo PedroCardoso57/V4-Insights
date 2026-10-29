@@ -49,7 +49,7 @@ export function CampanhasTable({ campanhas, moeda = "BRL" }: { campanhas: Campan
     </TableHead>
   );
   return (
-    <Table>
+    <Table colunasCartao={3}>
       <TableHeader>
         <TableRow>
           {th("campanha_nome", "Campanha")}

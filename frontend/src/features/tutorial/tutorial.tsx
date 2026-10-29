@@ -112,13 +112,15 @@ interface Caixa {
 
 function caixaDoAlvo(alvo?: string): Caixa | null {
   if (!alvo) return null;
-  const el = document.querySelector<HTMLElement>(`[data-tour="${CSS.escape(alvo)}"]`);
-  const r = el?.getBoundingClientRect();
-  if (!r || r.width === 0 || r.height === 0) return null; // escondido (ex.: menu lateral no celular)
+  // O mesmo alvo pode existir no menu lateral e na barra inferior do celular: vale o que está visível.
+  const r = Array.from(document.querySelectorAll<HTMLElement>(`[data-tour="${CSS.escape(alvo)}"]`))
+    .map((el) => el.getBoundingClientRect())
+    .find((c) => c.width > 0 && c.height > 0);
+  if (!r) return null;
   return { top: r.top - FOLGA, left: r.left - FOLGA, width: r.width + FOLGA * 2, height: r.height + FOLGA * 2 };
 }
 
-/** Ao lado do alvo quando cabe (menu lateral), senão abaixo dele (cabeçalho); sem alvo, no centro. */
+/** Ao lado do alvo quando cabe (menu lateral), senão abaixo dele (cabeçalho) ou acima (barra inferior); sem alvo, no centro. */
 function posicaoDoBalao(alvo: Caixa | null, altura: number): { top: number; left: number } {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
@@ -131,8 +133,10 @@ function posicaoDoBalao(alvo: Caixa | null, altura: number): { top: number; left
       left: alvo.left + alvo.width + MARGEM,
     };
   }
+  // Alvo perto do rodapé (barra inferior do celular): o balão fica acima dele.
+  const cabeAbaixo = alvo.top + alvo.height + MARGEM + altura <= vh - MARGEM;
   return {
-    top: limitar(alvo.top + alvo.height + MARGEM, vh - altura - MARGEM),
+    top: cabeAbaixo ? alvo.top + alvo.height + MARGEM : limitar(alvo.top - MARGEM - altura, vh - altura - MARGEM),
     left: limitar(alvo.left + alvo.width / 2 - largura / 2, vw - largura - MARGEM),
   };
 }
