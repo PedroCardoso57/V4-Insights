@@ -13,7 +13,6 @@ const ROTULOS: Record<string, string> = {
   integracoes: "Integrações",
   usuarios: "Usuários",
   configuracoes: "Configurações",
-  "em-construcao": "Em construção",
 };
 const UUID = /^[0-9a-f-]{36}$/i;
 

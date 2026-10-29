@@ -2,7 +2,14 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 
-/** Página em construção: o mascote pintando a parede, com o mesmo cartão escuro da arte. */
+/**
+ * Página em construção: o mascote pintando a parede. Use como conteúdo de uma página nova
+ * que já aparece no menu mas ainda não está pronta:
+ *
+ *   export default function Page() {
+ *     return <EmConstrucao titulo="Metas em construção" />;
+ *   }
+ */
 export function EmConstrucao({ titulo = "Página em construção" }: { titulo?: string }) {
   return (
     <section className="mx-auto flex max-w-2xl flex-col items-center rounded-2xl bg-[#111011] px-6 pt-6 pb-10 text-center text-white">
