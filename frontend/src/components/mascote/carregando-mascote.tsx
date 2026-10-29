@@ -5,84 +5,111 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Loader com o mascote V4: os 14 quadros da folha de animação, em sequência com
- * transição suave entre eles. Os quadros têm fundo escuro próprio (#111011), por isso
- * o cartão usa a mesma cor nos dois temas.
+ * Loader com o mascote V4: as etapas da folha de animação (sem fundo), trocando com
+ * transição suave enquanto ele flutua. Os efeitos de cada etapa (pontinhos, rastro de
+ * velocidade, confete) são CSS por cima da arte. "Concluído" só aparece no fim de verdade.
  */
-const QUADROS = 14;
-const ETAPAS = [
-  "Iniciando",
-  "Iniciando",
-  "Processando",
-  "Processando",
-  "Processando",
-  "Buscando dados",
-  "Buscando dados",
-  "Buscando dados",
-  "Processando",
-  "Processando",
-  "Quase lá",
-  "Quase lá",
-  "Concluído",
-  "Concluído",
-];
-const DURACAO_MS = 220;
+const ETAPAS = ["Iniciando", "Processando", "Buscando dados", "Processando", "Quase lá"];
+const CONCLUIDO = 5;
+const DURACAO_MS = 1100;
 
-export function CarregandoMascote({ className, compacto = false }: { className?: string; compacto?: boolean }) {
-  const [quadro, setQuadro] = useState(0);
+const CONFETES = [
+  [14, 22, -20],
+  [22, 8, 30],
+  [80, 10, -35],
+  [88, 30, 15],
+  [10, 52, 40],
+  [92, 58, -10],
+  [70, 2, 50],
+  [30, 0, -45],
+] as const;
+
+export function CarregandoMascote({ concluido = false, className }: { concluido?: boolean; className?: string }) {
+  const [passo, setPasso] = useState(0);
 
   useEffect(() => {
+    if (concluido) return;
     const reduzido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const id = window.setInterval(() => setQuadro((q) => (q + 1) % QUADROS), reduzido ? DURACAO_MS * 3 : DURACAO_MS);
+    const id = window.setInterval(() => setPasso((p) => (p + 1) % ETAPAS.length), reduzido ? DURACAO_MS * 2 : DURACAO_MS);
     return () => window.clearInterval(id);
-  }, []);
+  }, [concluido]);
 
-  const pct = Math.round(8 + (quadro / (QUADROS - 1)) * 92);
+  const etapa = concluido ? CONCLUIDO : passo;
+  const rotulo = concluido ? "Concluído!" : `${ETAPAS[passo]}…`;
 
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-label="Carregando"
-      className={cn(
-        "flex flex-col items-center rounded-2xl bg-[#111011] text-white shadow-[0_20px_60px_-20px_rgba(229,9,20,0.35)]",
-        compacto ? "gap-2 px-6 pt-3 pb-5" : "gap-3 px-10 pt-4 pb-7",
-        className,
-      )}
-    >
-      <div
-        className={cn("relative", compacto ? "h-[136px] w-[150px]" : "h-[204px] w-[225px]")}
-        style={{ maskImage: "radial-gradient(closest-side, #000 78%, transparent)" }}
-      >
-        {Array.from({ length: QUADROS }, (_, i) => (
-          // eslint-disable-next-line @next/next/no-img-element -- quadros já otimizados; next/image atrasaria a troca
-          <img
-            key={i}
-            src={`/mascote/carregando/${String(i).padStart(2, "0")}.webp`}
-            alt=""
-            aria-hidden
-            draggable={false}
-            className="absolute inset-0 size-full object-contain transition-opacity duration-200 ease-linear motion-reduce:transition-none"
-            style={{ opacity: i === quadro ? 1 : 0 }}
-          />
-        ))}
-      </div>
-      <p className="text-[13px] font-bold tracking-[0.18em] uppercase">Carregando</p>
-      <div className="flex w-56 items-center gap-3">
-        <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/15">
-          <div
-            className={cn("h-full rounded-full bg-[#e50914]", quadro > 0 && "transition-[width] duration-200 ease-linear")}
-            style={{ width: `${pct}%` }}
-          />
+    <div role="status" aria-live="polite" aria-label={concluido ? "Concluído" : "Carregando"} className={cn("flex flex-col items-center", className)}>
+      <div className="relative h-[228px] w-[300px]">
+        {/* Brilho vermelho e sombra no chão: dão o "palco" sem caixa em volta. */}
+        <div aria-hidden className="absolute inset-x-10 top-6 bottom-10 rounded-full bg-[#e50914]/20 blur-3xl" />
+        <div aria-hidden className="mascote-sombra absolute bottom-[14px] left-1/2 h-4 w-40 -translate-x-1/2 rounded-[50%] bg-black/35 blur-[6px] dark:bg-black/70" />
+
+        <div className="mascote-flutua absolute inset-0">
+          {Array.from({ length: CONCLUIDO + 1 }, (_, i) => (
+            // eslint-disable-next-line @next/next/no-img-element -- arte estática já otimizada; next/image atrasaria a troca
+            <img
+              key={i}
+              src={`/mascote/carregando/etapa-${i}.webp`}
+              alt=""
+              aria-hidden
+              draggable={false}
+              className={cn(
+                // Troca rápida com "pulinho" (overshoot): pouca sobreposição entre poses diferentes, sem efeito fantasma.
+                "absolute inset-0 size-full object-contain transition-[opacity,transform] motion-reduce:transition-none",
+                i === etapa
+                  ? "translate-y-0 scale-100 opacity-100 duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
+                  : "translate-y-2 scale-[0.9] opacity-0 duration-150 ease-in",
+              )}
+            />
+          ))}
+
+          {/* Iniciando: os três pontinhos acima da cabeça. */}
+          <div aria-hidden className={cn("absolute top-[6%] left-[49%] flex -translate-x-1/2 gap-1.5 transition-opacity duration-300", etapa === 0 ? "opacity-100" : "opacity-0")}>
+            {[0, 1, 2].map((i) => (
+              <span key={i} className="mascote-ponto size-2.5 rounded-full bg-[#ff2a35] shadow-[0_0_10px_#ff2a35]" style={{ animationDelay: `${i * 160}ms` }} />
+            ))}
+          </div>
+
+          {/* Processando: rastro de velocidade atrás dele. */}
+          <div aria-hidden className={cn("absolute top-[22%] left-[2%] flex w-[22%] flex-col gap-3 transition-opacity duration-300", etapa === 1 ? "opacity-100" : "opacity-0")}>
+            {[70, 100, 85, 60, 90].map((w, i) => (
+              <span
+                key={i}
+                className="mascote-rastro ml-auto h-[3px] rounded-full bg-gradient-to-r from-transparent to-[#ff2a35] shadow-[0_0_8px_#ff2a35]"
+                style={{ width: `${w}%`, animationDelay: `${i * 90}ms` }}
+              />
+            ))}
+          </div>
+
+          {/* Concluído: confete. */}
+          <div aria-hidden className={cn("absolute inset-0 transition-opacity duration-300", etapa === CONCLUIDO ? "opacity-100" : "opacity-0")}>
+            {CONFETES.map(([x, y, r], i) => (
+              <span
+                key={i}
+                className="mascote-confete absolute size-2 rounded-[2px] bg-[#ff2a35] shadow-[0_0_8px_#ff2a35]"
+                style={{ left: `${x}%`, top: `${y}%`, rotate: `${r}deg`, animationDelay: `${i * 60}ms` }}
+              />
+            ))}
+          </div>
         </div>
-        <span className="w-9 text-right font-mono-num text-xs font-semibold">{pct}%</span>
       </div>
-      <p className="text-xs text-white/70">{ETAPAS[quadro]}…</p>
+
+      <p className="mt-1 text-[13px] font-bold tracking-[0.2em] uppercase">{concluido ? "Pronto" : "Carregando"}</p>
+      <div className="mt-3 h-1.5 w-56 overflow-hidden rounded-full bg-foreground/10">
+        {concluido ? (
+          <div className="h-full w-full rounded-full bg-[#e50914]" />
+        ) : (
+          <div className="mascote-barra h-full w-2/5 rounded-full bg-gradient-to-r from-[#e50914]/0 via-[#e50914] to-[#ff4d55]" />
+        )}
+      </div>
+      <p key={rotulo} className="mascote-rotulo mt-2.5 text-xs text-muted-foreground">
+        {rotulo}
+      </p>
     </div>
   );
 }
 
-/** Tela cheia de carregamento (primeira carga do app e troca de página). */
+/** Carregamento de página dentro do app (troca de rota). */
 export function CarregandoTela() {
   return (
     <div className="flex min-h-[60vh] w-full items-center justify-center p-6">

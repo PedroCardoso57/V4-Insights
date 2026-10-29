@@ -22,15 +22,25 @@ export function AppShell({ children }: { children: ReactNode }) {
   const me = useMe();
   const [menu, setMenu] = useState(false);
   const semSessao = me.error instanceof ApiError && me.error.status === 401;
+  // Se a sessão precisou carregar, o mascote comemora um instante antes de abrir o app.
+  const [carregouDoZero] = useState(() => me.isPending);
+  const [liberado, setLiberado] = useState(false);
+  const comemorando = carregouDoZero && me.isSuccess && !liberado;
 
   useEffect(() => {
     if (semSessao) router.replace("/login");
   }, [semSessao, router]);
 
-  if (me.isPending || semSessao) {
+  useEffect(() => {
+    if (!comemorando) return;
+    const id = window.setTimeout(() => setLiberado(true), 900);
+    return () => window.clearTimeout(id);
+  }, [comemorando]);
+
+  if (me.isPending || semSessao || comemorando) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4" aria-busy="true">
-        <CarregandoMascote />
+      <div className="flex min-h-screen items-center justify-center bg-background p-4" aria-busy={!comemorando}>
+        <CarregandoMascote concluido={comemorando} />
       </div>
     );
   }
