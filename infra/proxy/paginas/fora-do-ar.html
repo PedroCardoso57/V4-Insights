@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Sistema fora do ar · V4 Insights</title>
+<style>
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%}
+  body{display:flex;align-items:center;justify-content:center;padding:24px 16px;background:#09060b;
+    background-image:radial-gradient(60% 50% at 50% 35%,rgba(229,9,20,.16),transparent 70%);
+    color:#f5f3f4;font-family:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;text-align:center}
+  main{width:100%;max-width:560px;display:flex;flex-direction:column;align-items:center;
+    background:#111011;border-radius:20px;padding:20px 20px 36px;box-shadow:0 30px 80px -30px rgba(229,9,20,.45)}
+  img{width:100%;height:auto;animation:flutua 3.2s ease-in-out infinite}
+  h1{margin-top:6px;font-size:17px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+  .traco{width:48px;height:4px;border-radius:4px;background:#e50914;margin-top:12px}
+  p{margin-top:16px;font-size:15px;line-height:1.5;color:rgba(255,255,255,.75)}
+  .status{margin-top:20px;font-size:12px;color:rgba(255,255,255,.5)}
+  button{margin-top:22px;font:inherit;font-size:14px;font-weight:600;color:#fff;background:#e50914;border:0;
+    border-radius:10px;padding:10px 20px;cursor:pointer}
+  button:hover{background:#ff1f2b}
+  button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+  @keyframes flutua{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  @media (prefers-reduced-motion:reduce){img{animation:none}}
+</style>
+</head>
+<body>
+<main>
+  <img src="/_estado/fora-do-ar.webp" alt="" width="848" height="808">
+  <h1>Sistema fora do ar</h1>
+  <span class="traco" aria-hidden="true"></span>
+  <p>Algo inesperado aconteceu.<br>Volte em breve!</p>
+  <button type="button" onclick="location.reload()">Tentar novamente</button>
+  <p class="status" id="status" aria-live="polite">Vamos recarregar sozinhos assim que o sistema voltar.</p>
+</main>
+<script>
+  // A cada 15 s pergunta pela própria página; quando ela voltar com 200, recarrega.
+  setInterval(function () {
+    fetch(location.href, { method: "HEAD", cache: "no-store" })
+      .then(function (r) { if (r.ok) location.reload(); })
+      .catch(function () {});
+  }, 15000);
+</script>
+</body>
+</html>

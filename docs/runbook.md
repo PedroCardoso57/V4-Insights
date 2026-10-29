@@ -57,8 +57,31 @@ A auditoria também guarda o `request_id` das ações sensíveis.
 docker compose exec -T postgres pg_dump -U $POSTGRES_USER -Fc $POSTGRES_DB > pre-deploy.dump
 git fetch --tags && git checkout vX.Y.Z
 APP_VERSION=vX.Y.Z docker compose up --build -d   # migrate roda antes de api/worker
+# (no dia a dia: bash infra/vps/atualizar.sh — mostra a página de manutenção durante a troca)
 docker compose ps                                  # todos healthy
 ```
+
+## Páginas de estado (mascote V4)
+
+Cada tela do mascote tem um caso. O Caddy serve sozinho as de fora do ar e manutenção
+(arquivos em `infra/proxy/paginas/`, montados em `/srv/paginas`), então elas aparecem mesmo
+com o frontend e a API parados.
+
+- **Fora do ar** = o sistema não está funcionando. É automática: quando o frontend ou a API
+  respondem 502/503/504, quem navega vê "Sistema fora do ar". Chamadas de API e health checks
+  recebem só o código. A página recarrega sozinha quando o site volta.
+- **Manutenção** = o sistema está recebendo uma atualização. Atualize sempre com
+  `bash infra/vps/atualizar.sh`: ele faz o pull e o build com o site no ar, liga a manutenção
+  só na troca dos containers e a desliga quando tudo fica saudável (ou se algo falhar).
+  Para uma manutenção manual (ex.: mexer no banco):
+  ```bash
+  touch infra/proxy/paginas/manutencao.on   # liga: todo o site responde 503 com "Sistema em manutenção"
+  rm infra/proxy/paginas/manutencao.on      # desliga
+  ```
+  `/health/*` continua passando, para o monitoramento não alarmar.
+- **Em construção** = uma página nova que já está no menu mas ainda não está pronta. O
+  `page.tsx` dela retorna `<EmConstrucao titulo="…" />` (`components/mascote/em-construcao.tsx`)
+  até a página de verdade entrar.
 
 ## Rollback
 
