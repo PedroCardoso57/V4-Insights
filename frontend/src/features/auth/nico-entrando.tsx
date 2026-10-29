@@ -58,7 +58,7 @@ export function NicoEntrando({ estado }: { estado: EstadoEntrada | null }) {
                 </div>
               </div>
             ) : (
-              <NicoAndando entradaMs={PASSAGEM_MS} className="absolute inset-0 size-full" />
+              <NicoAndando className="absolute inset-0" />
             )}
           </div>
 

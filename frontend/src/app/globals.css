@@ -302,7 +302,26 @@
 .nico-surge-fundo {
   animation: mascote-rotulo 0.2s ease-out both;
 }
+.nico-entra {
+  animation: nico-entra 1.3s cubic-bezier(0.25, 0.6, 0.35, 1) both;
+}
+.nico-chao {
+  animation: nico-chao 0.5s linear infinite;
+}
 
+@keyframes nico-entra {
+  from {
+    transform: translateX(-240px);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes nico-chao {
+  to {
+    transform: translateX(-32px);
+  }
+}
 @keyframes nico-pula {
   from {
     transform: translateY(16px) scale(0.85);
@@ -327,6 +346,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .nico-pula,
+  .nico-entra,
+  .nico-chao,
   .nico-surge,
   .nico-surge-fundo {
     animation: none;
