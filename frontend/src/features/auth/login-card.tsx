@@ -10,7 +10,7 @@ import { z } from "zod";
 
 import { SeloV4 } from "@/components/marca/simbolo-v4";
 import { useLoginSenha } from "@/features/auth/api";
-import { NicoEntrando, type EstadoEntrada } from "@/features/auth/nico-entrando";
+import { NicoEntrando, PASSAGEM_MS, type EstadoEntrada } from "@/features/auth/nico-entrando";
 import { consultaMe } from "@/hooks/use-me";
 import { ApiError, loginUrl } from "@/services/api/client";
 
@@ -60,8 +60,7 @@ const MOTIVOS: Record<string, string> = {
   autorizacao_cancelada: "O login foi cancelado na tela do Google.",
 };
 
-/** Tempo mínimo do Nico na tela (uma travessia) e da comemoração antes de abrir o app. */
-const PASSAGEM_MS = 1500;
+/** Tempo da comemoração antes de abrir o app. */
 const COMEMORACAO_MS = 1100;
 const espera = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
 

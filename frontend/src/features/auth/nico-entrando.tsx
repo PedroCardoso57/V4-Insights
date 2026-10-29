@@ -2,10 +2,15 @@
 
 import { Dialog as DialogPrimitive } from "radix-ui";
 
+import { NicoAndando } from "@/components/mascote/nico-andando";
+
 /**
- * Modal de entrada com o Nico, o mascote da V4: enquanto o login acontece ele passa
- * correndo pela tela; quando dá certo, comemora com o nome da pessoa.
+ * Modal de entrada com o Nico, o mascote da V4: enquanto o login acontece ele entra
+ * andando pela tela; quando dá certo, comemora com o nome da pessoa.
  */
+/** Tempo que o Nico leva para chegar ao centro; o login espera pelo menos isso. */
+export const PASSAGEM_MS = 1300;
+
 export type EstadoEntrada = { fase: "entrando" | "google" } | { fase: "pronto"; nome: string };
 
 const CONFETES = [
@@ -34,10 +39,9 @@ export function NicoEntrando({ estado }: { estado: EstadoEntrada | null }) {
           onInteractOutside={(e) => e.preventDefault()}
           className="nico-surge fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-[380px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-white/10 bg-[#111011] px-6 pt-5 pb-7 text-center text-white shadow-[0_30px_80px_-20px_rgba(229,9,20,0.55)] focus:outline-none"
         >
-          {/* Palco: o Nico atravessa da esquerda para a direita; no fim, comemora no centro. */}
+          {/* Palco: o Nico entra andando pela esquerda até o centro; no fim, comemora ali. */}
           <div className="relative mx-auto h-[190px] w-full overflow-hidden" aria-hidden>
             <div className="absolute inset-x-6 top-8 bottom-8 rounded-full bg-[#e50914]/25 blur-3xl" />
-            <div className="absolute inset-x-0 bottom-[22px] h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
             {pronto ? (
               <div className="absolute inset-0">
@@ -54,21 +58,7 @@ export function NicoEntrando({ estado }: { estado: EstadoEntrada | null }) {
                 </div>
               </div>
             ) : (
-              <div className="nico-passa absolute top-0 left-0 h-[175px] w-[230px]">
-                <div className="mascote-flutua relative size-full [animation-duration:0.5s]">
-                  <div className="absolute top-[24%] left-[2%] flex w-[24%] flex-col gap-3">
-                    {[70, 100, 85, 60, 90].map((w, i) => (
-                      <span
-                        key={i}
-                        className="mascote-rastro ml-auto h-[3px] rounded-full bg-gradient-to-r from-transparent to-[#ff2a35] shadow-[0_0_8px_#ff2a35]"
-                        style={{ width: `${w}%`, animationDelay: `${i * 90}ms` }}
-                      />
-                    ))}
-                  </div>
-                  {/* eslint-disable-next-line @next/next/no-img-element -- arte estática já otimizada */}
-                  <img src="/mascote/carregando/etapa-1.webp" alt="" className="size-full object-contain" draggable={false} />
-                </div>
-              </div>
+              <NicoAndando entradaMs={PASSAGEM_MS} className="absolute inset-0 size-full" />
             )}
           </div>
 
