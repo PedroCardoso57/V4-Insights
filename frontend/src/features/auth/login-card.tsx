@@ -1,14 +1,17 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { InfoIcon, ShieldAlertIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { SeloV4 } from "@/components/marca/simbolo-v4";
 import { useLoginSenha } from "@/features/auth/api";
+import { NicoEntrando, type EstadoEntrada } from "@/features/auth/nico-entrando";
+import { consultaMe } from "@/hooks/use-me";
 import { ApiError, loginUrl } from "@/services/api/client";
 
 const schema = z.object({
@@ -57,6 +60,11 @@ const MOTIVOS: Record<string, string> = {
   autorizacao_cancelada: "O login foi cancelado na tela do Google.",
 };
 
+/** Tempo mínimo do Nico na tela (uma travessia) e da comemoração antes de abrir o app. */
+const PASSAGEM_MS = 1500;
+const COMEMORACAO_MS = 1100;
+const espera = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
+
 function LogoGoogle() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
@@ -71,8 +79,17 @@ function LogoGoogle() {
 export function LoginCard() {
   const erro = useSearchParams().get("erro");
   const router = useRouter();
+  const qc = useQueryClient();
   const login = useLoginSenha();
   const [esqueci, setEsqueci] = useState(false);
+  const [entrada, setEntrada] = useState<EstadoEntrada | null>(null);
+
+  // Voltar do Google pelo botão do navegador restaura a página do cache: fecha o modal.
+  useEffect(() => {
+    const aoVoltar = (e: PageTransitionEvent) => e.persisted && setEntrada(null);
+    window.addEventListener("pageshow", aoVoltar);
+    return () => window.removeEventListener("pageshow", aoVoltar);
+  }, []);
   const {
     register,
     handleSubmit,
@@ -80,12 +97,24 @@ export function LoginCard() {
   } = useForm<Form>({ resolver: zodResolver(schema), defaultValues: { email: "", senha: "", manter: true } });
   const erroCampo = errors.email?.message ?? errors.senha?.message;
 
-  const entrar = handleSubmit((f) => {
+  const entrar = handleSubmit(async (f) => {
     setEsqueci(false);
-    login.mutate(
-      { email: f.email, senha: f.senha, manter_conectado: f.manter },
-      { onSuccess: () => router.replace("/") },
-    );
+    setEntrada({ fase: "entrando" });
+    const passagem = espera(PASSAGEM_MS);
+    try {
+      await login.mutateAsync({ email: f.email, senha: f.senha, manter_conectado: f.manter });
+    } catch {
+      setEntrada(null); // o erro aparece no aviso do card
+      return;
+    }
+    // Já deixa a sessão em cache: o app abre direto, sem a tela cheia de carregamento.
+    const me = await qc.fetchQuery(consultaMe).catch(() => null);
+    await passagem;
+    if (me) {
+      setEntrada({ fase: "pronto", nome: me.nome });
+      await espera(COMEMORACAO_MS);
+    }
+    router.replace("/");
   });
   return (
     <section
@@ -137,6 +166,7 @@ export function LoginCard() {
 
       <a
         href={loginUrl()}
+        onClick={() => setEntrada({ fase: "google" })}
         className="flex h-11 w-full items-center justify-center gap-2.5 rounded-xl bg-white text-[13px] font-semibold text-[#14161a] shadow-md transition-colors hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e50914]"
       >
         <LogoGoogle />
@@ -196,17 +226,10 @@ export function LoginCard() {
         </div>
         <button
           type="submit"
-          disabled={login.isPending}
+          disabled={entrada !== null}
           className="flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#e50914] text-[13px] font-semibold text-white shadow-[0_8px_24px_rgba(229,9,20,0.4)] transition-colors hover:bg-[#c40812] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-60"
         >
-          {login.isPending ? (
-            <>
-              <span aria-hidden className="size-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-              Validando credenciais…
-            </>
-          ) : (
-            "Entrar na plataforma"
-          )}
+          Entrar na plataforma
         </button>
       </form>
 
@@ -215,6 +238,8 @@ export function LoginCard() {
         <strong className="font-medium text-white/70">V4 Bounnacorso</strong>. Não há cadastro público: o acesso é
         concedido por um administrador.
       </p>
+
+      <NicoEntrando estado={entrada} />
     </section>
   );
 }
