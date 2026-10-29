@@ -13,9 +13,9 @@ from app.core import senhas
 from app.core.oidc import normalize_email
 from app.core.sessions import now
 from app.db.session import get_db
-from app.models import Papel, Perfil, Sessao, Usuario, UsuarioCliente
+from app.models import Papel, Perfil, Sessao, Usuario, UsuarioCliente, UsuarioFoto
 from app.schemas import DefinirSenhaIn, Page, UsuarioCreate, UsuarioOut, UsuarioUpdate
-from app.services import lgpd
+from app.services import fotos, lgpd
 from app.services.audit import registrar
 from app.services.perfis import perfil_id
 
@@ -26,6 +26,7 @@ def _out(u: Usuario) -> UsuarioOut:
     out = UsuarioOut.model_validate(u)
     out.vinculado_google = u.google_sub is not None
     out.tem_senha = u.senha_hash is not None
+    out.foto_url = fotos.url_foto(u.id, u.foto_atualizada_em)
     return out
 
 
@@ -240,6 +241,118 @@ def remover_senha(
             db,
             usuario_id=principal.usuario.id,
             acao="remover_senha",
+            entidade="usuario",
+            entidade_id=u.id,
+            request=request,
+        )
+        db.commit()
+    return Response(status_code=204)
+
+
+@router.get(
+    "/{usuario_id}/foto",
+    response_class=Response,
+    responses={200: {"content": {"image/webp": {}}}},
+)
+def obter_foto(
+    usuario_id: uuid.UUID,
+    principal: Principal = Depends(get_principal),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Foto de perfil (WEBP). Qualquer colaborador logado vê, para identificar a equipe."""
+    foto = db.get(UsuarioFoto, usuario_id)
+    if foto is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuário sem foto")
+    return Response(
+        foto.conteudo,
+        media_type="image/webp",
+        headers={
+            # A URL muda a cada troca (?v=), então o navegador pode guardar por bastante tempo.
+            "Cache-Control": "private, max-age=604800",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+def _checar_dono_da_foto(principal: Principal, usuario_id: uuid.UUID) -> None:
+    exigir(
+        principal.is_admin or principal.usuario.id == usuario_id,
+        "Somente o próprio colaborador ou um admin altera a foto",
+    )
+
+
+async def _corpo_bruto(request: Request) -> bytes:
+    """Lê o corpo cru, parando cedo se passar do limite (o Content-Length pode mentir)."""
+    corpo = bytearray()
+    async for parte in request.stream():
+        corpo += parte
+        if len(corpo) > fotos.TAMANHO_MAXIMO:
+            raise AppError(413, "A imagem deve ter no máximo 8 MB.", code="PAYLOAD_TOO_LARGE")
+    return bytes(corpo)
+
+
+@router.put(
+    "/{usuario_id}/foto",
+    response_model=UsuarioOut,
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {
+                t: {"schema": {"type": "string", "format": "binary"}}
+                for t in ("image/jpeg", "image/png", "image/webp")
+            },
+        }
+    },
+)
+def enviar_foto(
+    usuario_id: uuid.UUID,
+    request: Request,
+    conteudo: bytes = Depends(_corpo_bruto),
+    principal: Principal = Depends(get_principal),
+    db: Session = Depends(get_db),
+) -> UsuarioOut:
+    """Recebe a imagem crua no corpo (JPG, PNG ou WEBP, até 8 MB) e grava 256x256 em WEBP."""
+    _checar_dono_da_foto(principal, usuario_id)
+    u = _get_usuario(db, usuario_id)
+    try:
+        webp = fotos.normalizar(conteudo)
+    except fotos.FotoInvalida as exc:
+        raise AppError(422, str(exc), code="INVALID_IMAGE") from exc
+    foto = db.get(UsuarioFoto, u.id)
+    if foto is None:
+        db.add(UsuarioFoto(usuario_id=u.id, conteudo=webp))
+    else:
+        foto.conteudo = webp
+    u.foto_atualizada_em = now()
+    registrar(
+        db,
+        usuario_id=principal.usuario.id,
+        acao="definir_foto",
+        entidade="usuario",
+        entidade_id=u.id,
+        request=request,
+    )
+    db.commit()
+    db.refresh(u)
+    return _out(u)
+
+
+@router.delete("/{usuario_id}/foto", status_code=204)
+def remover_foto(
+    usuario_id: uuid.UUID,
+    request: Request,
+    principal: Principal = Depends(get_principal),
+    db: Session = Depends(get_db),
+) -> Response:
+    _checar_dono_da_foto(principal, usuario_id)
+    u = _get_usuario(db, usuario_id)
+    if u.foto_atualizada_em is not None:
+        db.query(UsuarioFoto).filter(UsuarioFoto.usuario_id == u.id).delete()
+        u.foto_atualizada_em = None
+        registrar(
+            db,
+            usuario_id=principal.usuario.id,
+            acao="remover_foto",
             entidade="usuario",
             entidade_id=u.id,
             request=request,

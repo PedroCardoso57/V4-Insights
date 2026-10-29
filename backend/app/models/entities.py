@@ -140,12 +140,26 @@ class Usuario(Base):
     senha_atualizada_em: Mapped[datetime | None] = _ts(nullable=True)
     # 0005: excluído pela tela de Usuários (anonimizado, fora das listagens).
     excluido_em: Mapped[datetime | None] = _ts(nullable=True)
+    # 0007: preenchido quando há foto em usuario_fotos; também versiona a URL da imagem.
+    foto_atualizada_em: Mapped[datetime | None] = _ts(nullable=True)
 
     perfil: Mapped[Perfil] = relationship(lazy="joined")
 
     @property
     def papel(self) -> str:
         return self.perfil.codigo
+
+
+class UsuarioFoto(Base):
+    """Foto de perfil já normalizada (WEBP 256x256, sem metadados), fora da linha do usuário."""
+
+    __tablename__ = "usuario_fotos"
+
+    usuario_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("usuarios.id", ondelete="CASCADE"), primary_key=True
+    )
+    conteudo: Mapped[bytes] = mapped_column(LargeBinary)
+    atualizado_em: Mapped[datetime] = _ts(onupdate=func.now())
 
 
 class Cliente(Base):

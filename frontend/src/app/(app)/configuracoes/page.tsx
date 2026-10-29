@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
 import { SenhaCard } from "@/features/auth/senha-card";
+import { FotoCard } from "@/features/usuarios/foto-card";
 import { ChavesCard } from "@/features/configuracoes/chaves-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,6 +44,7 @@ export default function ConfiguracoesPage() {
     <>
       <PageHeader titulo="Configurações" descricao="Preferências deste navegador e status operacional da plataforma." />
       <div className="grid gap-5 lg:grid-cols-2">
+        <FotoCard />
         <Card className="lg:col-span-2">
           <CardHeader className="flex-col items-start">
             <CardTitle>Aparência</CardTitle>

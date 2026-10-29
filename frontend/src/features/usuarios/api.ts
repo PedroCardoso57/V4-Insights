@@ -34,3 +34,36 @@ export function useExcluirUsuario() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["usuarios"] }),
   });
 }
+
+export const FOTO_TIPOS = ["image/jpeg", "image/png", "image/webp"] as const;
+export const FOTO_MAX_BYTES = 8 * 1024 * 1024;
+
+function aposTrocarFoto(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ["me"] });
+  qc.invalidateQueries({ queryKey: ["usuarios"] });
+}
+
+/** Envia a imagem crua; a API corta, reduz para 256x256 e remove metadados. */
+export function useEnviarFoto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, arquivo }: { id: string; arquivo: File }) =>
+      unwrap(
+        api.PUT("/api/v1/usuarios/{usuario_id}/foto", {
+          params: { path: { usuario_id: id } },
+          body: arquivo as unknown as string,
+          bodySerializer: (b) => b as unknown as BodyInit,
+          headers: { "Content-Type": arquivo.type },
+        }),
+      ),
+    onSuccess: () => aposTrocarFoto(qc),
+  });
+}
+
+export function useRemoverFoto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => unwrap(api.DELETE("/api/v1/usuarios/{usuario_id}/foto", { params: { path: { usuario_id: id } } })),
+    onSuccess: () => aposTrocarFoto(qc),
+  });
+}
