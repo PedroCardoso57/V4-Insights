@@ -25,3 +25,15 @@ export function useSalvarChaves() {
     onSuccess: (dados) => qc.setQueryData(chave, dados),
   });
 }
+
+export type VersaoApi = Schemas["VersaoApiOut"];
+
+/** Versões das APIs das plataformas e quando são desligadas (só o responsável pelas chaves). */
+export function useVersoesApi(enabled = true) {
+  return useQuery({
+    queryKey: ["configuracoes", "versoes-api"],
+    queryFn: () => unwrap(api.GET("/api/v1/configuracoes/versoes-api")),
+    enabled,
+    staleTime: 60 * 60_000,
+  });
+}

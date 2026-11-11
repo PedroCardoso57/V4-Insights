@@ -269,3 +269,45 @@ test("configurações: status operacional só para o responsável", async ({ pag
   await expect(page.getByText("Status operacional", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Aparência", { exact: true })).toHaveCount(0);
 });
+
+test("conversões: escolher as ações que contam e salvar recalcula", async ({ page }) => {
+  const st = novoEstado("analista");
+  await instalarApi(page, st);
+  await page.goto(`/clientes/${CLIENTE}?aba=conversoes`);
+  const card = page.getByRole("main").locator("[data-slot=card]", { hasText: "Conta Meta" });
+  await expect(card.getByRole("checkbox", { name: "Contar Compra como conversão" })).toBeChecked();
+  await expect(card.getByRole("button", { name: "Salvar e recalcular" })).toBeDisabled();
+  await card.getByRole("checkbox", { name: "Contar Lead como conversão" }).check();
+  await card.getByRole("button", { name: "Salvar e recalcular" }).click();
+  await expect(page.getByText("90 linhas do histórico recalculadas")).toBeVisible();
+  const conta = (st.integracoes[0]?.contas as Record<string, unknown>[])[0];
+  expect(conta?.mapeamento_conversoes).toEqual({ action_types: ["purchase", "lead"], acao_valor: ["purchase"], janela: null });
+});
+
+test("conversões: visualizador só consulta", async ({ page }) => {
+  await instalarApi(page, novoEstado("visualizador"));
+  await page.goto(`/clientes/${CLIENTE}?aba=conversoes`);
+  await expect(page.getByRole("checkbox", { name: "Contar Compra como conversão" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Salvar e recalcular" })).toHaveCount(0);
+});
+
+test("configurações: responsável vê as versões das APIs", async ({ page }) => {
+  const st = novoEstado("admin");
+  st.responsavel = true;
+  await instalarApi(page, st);
+  await page.goto("/configuracoes");
+  await expect(page.getByText("Versões das APIs das plataformas")).toBeVisible();
+  await expect(page.getByText("funciona até 01/08/2027")).toBeVisible();
+});
+
+test("páginas públicas de privacidade, termos e exclusão abrem sem login @mobile", async ({ page }) => {
+  await instalarApi(page, novoEstado(null));
+  const paginas: [string, string][] = [["/privacidade", "Política de privacidade"], ["/termos", "Termos de uso"], ["/exclusao-de-dados", "Exclusão de dados"]];
+  for (const [rota, titulo] of paginas) {
+    await page.goto(rota);
+    await expect(page).toHaveURL(new RegExp(`${rota}$`));
+    await expect(page.getByRole("heading", { level: 1, name: titulo })).toBeVisible();
+    const largura = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(largura).toBeLessThanOrEqual(0);
+  }
+});

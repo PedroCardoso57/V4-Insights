@@ -1,6 +1,37 @@
 {
   "components": {
     "schemas": {
+      "AcaoConversaoOut": {
+        "description": "Tipo de ação recebido da plataforma, com totais recentes para ajudar a escolher.",
+        "properties": {
+          "action_type": {
+            "title": "Action Type",
+            "type": "string"
+          },
+          "quantidade": {
+            "title": "Quantidade",
+            "type": "string"
+          },
+          "valor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor"
+          }
+        },
+        "required": [
+          "action_type",
+          "quantidade",
+          "valor"
+        ],
+        "title": "AcaoConversaoOut",
+        "type": "object"
+      },
       "AuditoriaOut": {
         "properties": {
           "acao": {
@@ -653,6 +684,91 @@
         "title": "ContaSelecao",
         "type": "object"
       },
+      "ConversoesClienteOut": {
+        "properties": {
+          "contas": {
+            "items": {
+              "$ref": "#/components/schemas/ConversoesContaOut"
+            },
+            "title": "Contas",
+            "type": "array"
+          }
+        },
+        "required": [
+          "contas"
+        ],
+        "title": "ConversoesClienteOut",
+        "type": "object"
+      },
+      "ConversoesContaOut": {
+        "properties": {
+          "acoes": {
+            "items": {
+              "$ref": "#/components/schemas/AcaoConversaoOut"
+            },
+            "title": "Acoes",
+            "type": "array"
+          },
+          "ativa": {
+            "title": "Ativa",
+            "type": "boolean"
+          },
+          "conta_anuncio_id": {
+            "format": "uuid",
+            "title": "Conta Anuncio Id",
+            "type": "string"
+          },
+          "conta_externa_id": {
+            "title": "Conta Externa Id",
+            "type": "string"
+          },
+          "dias_analisados": {
+            "title": "Dias Analisados",
+            "type": "integer"
+          },
+          "integracao_id": {
+            "format": "uuid",
+            "title": "Integracao Id",
+            "type": "string"
+          },
+          "janelas": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Janelas",
+            "type": "array"
+          },
+          "mapeamento": {
+            "$ref": "#/components/schemas/MapeamentoConversoes"
+          },
+          "moeda": {
+            "title": "Moeda",
+            "type": "string"
+          },
+          "nome": {
+            "title": "Nome",
+            "type": "string"
+          },
+          "plataforma": {
+            "$ref": "#/components/schemas/Plataforma"
+          }
+        },
+        "required": [
+          "conta_anuncio_id",
+          "integracao_id",
+          "plataforma",
+          "conta_externa_id",
+          "nome",
+          "moeda",
+          "ativa",
+          "mapeamento",
+          "janelas",
+          "dias_analisados",
+          "acoes"
+        ],
+        "title": "ConversoesContaOut",
+        "type": "object"
+      },
       "DashboardIn": {
         "properties": {
           "cliente_id": {
@@ -1296,6 +1412,21 @@
       "MapeamentoConversoes": {
         "description": "Ações do provedor contadas como conversão e janela de atribuição (opcional).",
         "properties": {
+          "acao_valor": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 50,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acao Valor"
+          },
           "action_types": {
             "items": {
               "type": "string"
@@ -2048,6 +2179,28 @@
         "title": "ResumoOut",
         "type": "object"
       },
+      "SalvarConversoesOut": {
+        "properties": {
+          "conta": {
+            "$ref": "#/components/schemas/ConversoesContaOut"
+          },
+          "linhas_recalculadas": {
+            "title": "Linhas Recalculadas",
+            "type": "integer"
+          },
+          "ressincronizando": {
+            "title": "Ressincronizando",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "conta",
+          "linhas_recalculadas",
+          "ressincronizando"
+        ],
+        "title": "SalvarConversoesOut",
+        "type": "object"
+      },
       "SelecionarContasIn": {
         "properties": {
           "contas": {
@@ -2546,6 +2699,60 @@
           }
         },
         "title": "UsuarioUpdate",
+        "type": "object"
+      },
+      "VersaoApiOut": {
+        "description": "Versão de API de uma plataforma e quando ela deixa de funcionar (M01).",
+        "properties": {
+          "desliga_em": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Desliga Em"
+          },
+          "dias_restantes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dias Restantes"
+          },
+          "plataforma": {
+            "$ref": "#/components/schemas/Plataforma"
+          },
+          "situacao": {
+            "enum": [
+              "ok",
+              "atencao",
+              "desligada",
+              "sem_data"
+            ],
+            "title": "Situacao",
+            "type": "string"
+          },
+          "versao": {
+            "title": "Versao",
+            "type": "string"
+          }
+        },
+        "required": [
+          "plataforma",
+          "versao",
+          "desliga_em",
+          "dias_restantes",
+          "situacao"
+        ],
+        "title": "VersaoApiOut",
         "type": "object"
       },
       "WidgetIn": {
@@ -4254,6 +4461,212 @@
         ]
       }
     },
+    "/api/v1/clientes/{cliente_id}/conversoes": {
+      "get": {
+        "operationId": "listar_api_v1_clientes__cliente_id__conversoes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cliente_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Cliente Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversoesClienteOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "CONFLICT"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "RATE_LIMITED"
+          }
+        },
+        "summary": "Listar",
+        "tags": [
+          "conversoes"
+        ]
+      }
+    },
+    "/api/v1/clientes/{cliente_id}/conversoes/{conta_anuncio_id}": {
+      "put": {
+        "operationId": "salvar_api_v1_clientes__cliente_id__conversoes__conta_anuncio_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cliente_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Cliente Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "conta_anuncio_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conta Anuncio Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MapeamentoConversoes"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalvarConversoesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "CONFLICT"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "RATE_LIMITED"
+          }
+        },
+        "summary": "Salvar",
+        "tags": [
+          "conversoes"
+        ]
+      }
+    },
     "/api/v1/clientes/{cliente_id}/metricas/resumo": {
       "get": {
         "operationId": "resumo_api_v1_clientes__cliente_id__metricas_resumo_get",
@@ -4940,6 +5353,92 @@
           }
         },
         "summary": "Salvar Chaves",
+        "tags": [
+          "configuracoes"
+        ]
+      }
+    },
+    "/api/v1/configuracoes/versoes-api": {
+      "get": {
+        "description": "Versões das APIs das plataformas em uso e data de desligamento (card Status operacional,\nsó para o responsável pelas chaves).",
+        "operationId": "versoes_api_em_uso_api_v1_configuracoes_versoes_api_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VersaoApiOut"
+                  },
+                  "title": "Response Versoes Api Em Uso Api V1 Configuracoes Versoes Api Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "UNAUTHENTICATED"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "CONFLICT"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "VALIDATION_ERROR"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "RATE_LIMITED"
+          }
+        },
+        "summary": "Versoes Api Em Uso",
         "tags": [
           "configuracoes"
         ]

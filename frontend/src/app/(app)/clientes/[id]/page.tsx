@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useArquivarCliente, useCliente, useExcluirCliente } from "@/features/clientes/api";
 import { ClienteFormDialog } from "@/features/clientes/cliente-form";
 import { Equipe } from "@/features/clientes/equipe";
+import { ConversoesCliente } from "@/features/conversoes/conversoes-cliente";
 import { IntegracoesLista } from "@/features/integracoes/integracoes-lista";
 import { PainelCliente } from "@/features/metricas/painel";
 import { ListaRelatorios } from "@/features/relatorios/lista";
@@ -64,6 +65,7 @@ export default function ClienteDetalhePage() {
               <TabsList aria-label="Seções do cliente">
                 <TabsTrigger value="visao">Indicadores</TabsTrigger>
                 {pode.editar(papel) && <TabsTrigger value="integracoes">Integrações</TabsTrigger>}
+                <TabsTrigger value="conversoes">Conversões</TabsTrigger>
                 <TabsTrigger value="relatorios">Relatórios</TabsTrigger>
                 <TabsTrigger value="equipe">Equipe</TabsTrigger>
               </TabsList>
@@ -71,6 +73,7 @@ export default function ClienteDetalhePage() {
               {pode.editar(papel) && (
                 <TabsContent value="integracoes"><IntegracoesLista clienteId={c.id} arquivado={arquivado} /></TabsContent>
               )}
+              <TabsContent value="conversoes"><ConversoesCliente clienteId={c.id} arquivado={arquivado} /></TabsContent>
               <TabsContent value="relatorios">
                 <ListaRelatorios clienteId={c.id} />
               </TabsContent>

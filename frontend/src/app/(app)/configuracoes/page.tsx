@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2Icon, XCircleIcon } from "lucide-react";
+import { AlertTriangleIcon, CheckCircle2Icon, XCircleIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { SenhaCard } from "@/features/auth/senha-card";
 import { FotoCard } from "@/features/usuarios/foto-card";
 import { ChavesCard } from "@/features/configuracoes/chaves-card";
+import { useVersoesApi, type VersaoApi } from "@/features/configuracoes/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,10 +17,30 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMe } from "@/hooks/use-me";
-import { PAPEL_LABEL } from "@/lib/format";
+import { fmtData, PAPEL_LABEL, PLATAFORMA_LABEL } from "@/lib/format";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { parsePreferencias, PREFERENCIAS_KEY, type Preferencias } from "@/lib/preferencias";
 import { API_BASE } from "@/services/api/client";
+
+function VersaoLinha({ v }: { v: VersaoApi }) {
+  const quando =
+    v.situacao === "sem_data"
+      ? "sem data de desligamento publicada"
+      : v.situacao === "desligada"
+        ? `desligada em ${fmtData(v.desliga_em)}`
+        : `funciona até ${fmtData(v.desliga_em)}`;
+  const Icone = v.situacao === "desligada" ? XCircleIcon : v.situacao === "atencao" ? AlertTriangleIcon : CheckCircle2Icon;
+  const cor = v.situacao === "desligada" ? "text-destructive" : v.situacao === "atencao" ? "text-warning" : "text-success";
+  return (
+    <li className="flex items-center gap-2">
+      <Icone className={`size-4 shrink-0 ${cor}`} />
+      <span>
+        {PLATAFORMA_LABEL[v.plataforma]}: API <span className="font-mono-num">{v.versao}</span>{" "}
+        <span className="text-muted-foreground">· {quando}</span>
+      </span>
+    </li>
+  );
+}
 
 interface Ready {
   status: string;
@@ -38,6 +59,7 @@ export default function ConfiguracoesPage() {
     // Só o responsável pela plataforma vê o status operacional.
     enabled: !!me?.responsavel_chaves,
   });
+  const versoes = useVersoesApi(!!me?.responsavel_chaves);
 
   return (
     <>
@@ -102,6 +124,14 @@ export default function ConfiguracoesPage() {
                     </li>
                   ))}
                 </ul>
+              )}
+              {versoes.data && (
+                <div className="grid gap-2 border-t pt-3">
+                  <p className="text-xs font-medium text-muted-foreground">Versões das APIs das plataformas</p>
+                  <ul className="grid gap-2">
+                    {versoes.data.map((v) => <VersaoLinha key={v.plataforma} v={v} />)}
+                  </ul>
+                </div>
               )}
               {me && (
                 <p className="text-muted-foreground">

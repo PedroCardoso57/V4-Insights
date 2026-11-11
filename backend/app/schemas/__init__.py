@@ -272,6 +272,8 @@ class MapeamentoConversoes(BaseModel):
     """Ações do provedor contadas como conversão e janela de atribuição (opcional)."""
 
     action_types: list[str] = Field(default_factory=list, max_length=50)
+    # Ações cujo valor soma em "valor de conversões"; None = as mesmas de action_types.
+    acao_valor: list[str] | None = Field(default=None, max_length=50)
     janela: str | None = Field(default=None, max_length=40)
 
 
@@ -566,3 +568,45 @@ class ChavesIn(BaseModel):
             if valor is not None and len(valor) > 500:
                 raise ValueError("valor muito longo (máximo 500 caracteres)")
         return v
+
+
+class VersaoApiOut(BaseModel):
+    """Versão de API de uma plataforma e quando ela deixa de funcionar (M01)."""
+
+    plataforma: Plataforma
+    versao: str
+    desliga_em: date | None
+    dias_restantes: int | None
+    situacao: Literal["ok", "atencao", "desligada", "sem_data"]
+
+
+class AcaoConversaoOut(BaseModel):
+    """Tipo de ação recebido da plataforma, com totais recentes para ajudar a escolher."""
+
+    action_type: str
+    quantidade: Decimal
+    valor: Decimal | None
+
+
+class ConversoesContaOut(BaseModel):
+    conta_anuncio_id: uuid.UUID
+    integracao_id: uuid.UUID
+    plataforma: Plataforma
+    conta_externa_id: str
+    nome: str
+    moeda: str
+    ativa: bool
+    mapeamento: MapeamentoConversoes
+    janelas: list[str]
+    dias_analisados: int
+    acoes: list[AcaoConversaoOut]
+
+
+class ConversoesClienteOut(BaseModel):
+    contas: list[ConversoesContaOut]
+
+
+class SalvarConversoesOut(BaseModel):
+    conta: ConversoesContaOut
+    linhas_recalculadas: int
+    ressincronizando: bool

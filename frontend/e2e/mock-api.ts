@@ -110,6 +110,32 @@ export async function instalarApi(page: Page, st: Estado) {
       const c = st.clientes.find((x) => x.id === seg[1]);
       if (!c) return erro(route, 404, "NOT_FOUND", "Cliente não encontrado");
       if (seg.length === 2 && m === "GET") return json(route, c);
+      if (seg[2] === "conversoes") {
+        // M04: ações de cada conta com totais dos últimos 30 dias; salvar grava o mapeamento.
+        const contas = st.integracoes.filter((i) => i.cliente_id === c.id).flatMap((i) =>
+          (i.contas as Obj[]).map((ct) => ({ ct, i })),
+        );
+        const saida = ({ ct, i }: { ct: Obj; i: Obj }) => ({
+          conta_anuncio_id: ct.id, integracao_id: i.id, plataforma: i.plataforma, conta_externa_id: ct.conta_externa_id,
+          nome: ct.nome, moeda: ct.moeda, ativa: ct.ativa, mapeamento: { acao_valor: null, janela: null, ...(ct.mapeamento_conversoes as Obj) },
+          janelas: i.plataforma === "meta_ads" ? ["1d_click", "7d_click", "28d_click", "1d_view"] : [], dias_analisados: 30,
+          acoes: [
+            { action_type: "link_click", quantidade: "820", valor: null },
+            { action_type: "lead", quantidade: "48", valor: null },
+            { action_type: "purchase", quantidade: "12", valor: "3480.00" },
+            { action_type: "onsite_conversion.messaging_conversation_started_7d", quantidade: "31", valor: null },
+          ],
+        });
+        if (m === "GET") return json(route, { contas: contas.map(saida) });
+        if (m === "PUT") {
+          if (st.papel === "visualizador") return erro(route, 403, "FORBIDDEN", "Permissão insuficiente");
+          const alvo = contas.find(({ ct }) => ct.id === seg[3]);
+          if (!alvo) return erro(route, 404, "NOT_FOUND", "Conta não encontrada");
+          const antes = (alvo.ct.mapeamento_conversoes as Obj).janela ?? null;
+          alvo.ct.mapeamento_conversoes = { ...body };
+          return json(route, { conta: saida(alvo), linhas_recalculadas: 90, ressincronizando: (body.janela ?? null) !== antes });
+        }
+      }
       if (seg.length === 2 && m === "PATCH") return json(route, Object.assign(c, body, { atualizado_em: agoraIso() }));
       if (seg.length === 2 && m === "DELETE") {
         if (st.papel !== "admin") return erro(route, 403, "FORBIDDEN", "Permissão insuficiente");
@@ -206,6 +232,15 @@ export async function instalarApi(page: Page, st: Estado) {
         grupo("google_login", "Login com Google", [["google_oidc_client_id", "ID do cliente", false], ["google_oidc_client_secret", "Chave secreta do cliente", true]]),
         grupo("meta_ads", "Meta Ads", [["meta_app_id", "ID do app", false], ["meta_app_secret", "Chave secreta do app", true]]),
         grupo("google_ads", "Google Ads", [["google_ads_client_id", "ID do cliente OAuth", false], ["google_ads_client_secret", "Chave secreta do cliente", true]]),
+      ]);
+    }
+    if (p === "/configuracoes/versoes-api") {
+      if (!st.responsavel) return erro(route, 403, "FORBIDDEN", "Apenas o responsável pelas chaves");
+      return json(route, [
+        { plataforma: "meta_ads", versao: "v25.0", desliga_em: "2028-07-29", dias_restantes: 626, situacao: "ok" },
+        { plataforma: "google_ads", versao: "v25", desliga_em: "2027-08-01", dias_restantes: 263, situacao: "ok" },
+        { plataforma: "linkedin_ads", versao: "202609", desliga_em: "2027-09-01", dias_restantes: 294, situacao: "ok" },
+        { plataforma: "tiktok_ads", versao: "v1.3", desliga_em: null, dias_restantes: null, situacao: "sem_data" },
       ]);
     }
     // usuários
