@@ -233,6 +233,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/clientes/{cliente_id}/conversoes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar */
+        get: operations["listar_api_v1_clientes__cliente_id__conversoes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/clientes/{cliente_id}/conversoes/{conta_anuncio_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Salvar */
+        put: operations["salvar_api_v1_clientes__cliente_id__conversoes__conta_anuncio_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/clientes/{cliente_id}/metricas/resumo": {
         parameters: {
             query?: never;
@@ -299,6 +333,27 @@ export interface paths {
          *     valer o `.env`. Os valores nunca são registrados na auditoria, só quais mudaram.
          */
         put: operations["salvar_chaves_api_v1_configuracoes_chaves_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configuracoes/versoes-api": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Versoes Api Em Uso
+         * @description Versões das APIs das plataformas em uso e data de desligamento (card Status operacional,
+         *     só para o responsável pelas chaves).
+         */
+        get: operations["versoes_api_em_uso_api_v1_configuracoes_versoes_api_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -760,6 +815,18 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AcaoConversaoOut
+         * @description Tipo de ação recebido da plataforma, com totais recentes para ajudar a escolher.
+         */
+        AcaoConversaoOut: {
+            /** Action Type */
+            action_type: string;
+            /** Quantidade */
+            quantidade: string;
+            /** Valor */
+            valor: string | null;
+        };
         /** AuditoriaOut */
         AuditoriaOut: {
             /** Acao */
@@ -967,6 +1034,40 @@ export interface components {
             /** Conta Externa Id */
             conta_externa_id: string;
             mapeamento_conversoes?: components["schemas"]["MapeamentoConversoes"] | null;
+        };
+        /** ConversoesClienteOut */
+        ConversoesClienteOut: {
+            /** Contas */
+            contas: components["schemas"]["ConversoesContaOut"][];
+        };
+        /** ConversoesContaOut */
+        ConversoesContaOut: {
+            /** Acoes */
+            acoes: components["schemas"]["AcaoConversaoOut"][];
+            /** Ativa */
+            ativa: boolean;
+            /**
+             * Conta Anuncio Id
+             * Format: uuid
+             */
+            conta_anuncio_id: string;
+            /** Conta Externa Id */
+            conta_externa_id: string;
+            /** Dias Analisados */
+            dias_analisados: number;
+            /**
+             * Integracao Id
+             * Format: uuid
+             */
+            integracao_id: string;
+            /** Janelas */
+            janelas: string[];
+            mapeamento: components["schemas"]["MapeamentoConversoes"];
+            /** Moeda */
+            moeda: string;
+            /** Nome */
+            nome: string;
+            plataforma: components["schemas"]["Plataforma"];
         };
         /** DashboardIn */
         DashboardIn: {
@@ -1199,6 +1300,8 @@ export interface components {
          * @description Ações do provedor contadas como conversão e janela de atribuição (opcional).
          */
         MapeamentoConversoes: {
+            /** Acao Valor */
+            acao_valor?: string[] | null;
             /** Action Types */
             action_types?: string[];
             /** Janela */
@@ -1492,6 +1595,14 @@ export interface components {
                 [key: string]: string | null;
             };
         };
+        /** SalvarConversoesOut */
+        SalvarConversoesOut: {
+            conta: components["schemas"]["ConversoesContaOut"];
+            /** Linhas Recalculadas */
+            linhas_recalculadas: number;
+            /** Ressincronizando */
+            ressincronizando: boolean;
+        };
         /** SelecionarContasIn */
         SelecionarContasIn: {
             /** Contas */
@@ -1676,6 +1787,24 @@ export interface components {
             /** Nome */
             nome?: string | null;
             papel?: components["schemas"]["Papel"] | null;
+        };
+        /**
+         * VersaoApiOut
+         * @description Versão de API de uma plataforma e quando ela deixa de funcionar (M01).
+         */
+        VersaoApiOut: {
+            /** Desliga Em */
+            desliga_em: string | null;
+            /** Dias Restantes */
+            dias_restantes: number | null;
+            plataforma: components["schemas"]["Plataforma"];
+            /**
+             * Situacao
+             * @enum {string}
+             */
+            situacao: "ok" | "atencao" | "desligada" | "sem_data";
+            /** Versao */
+            versao: string;
         };
         /** WidgetIn */
         WidgetIn: {
@@ -2883,6 +3012,163 @@ export interface operations {
             };
         };
     };
+    listar_api_v1_clientes__cliente_id__conversoes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cliente_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversoesClienteOut"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description CONFLICT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description RATE_LIMITED */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    salvar_api_v1_clientes__cliente_id__conversoes__conta_anuncio_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cliente_id: string;
+                conta_anuncio_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MapeamentoConversoes"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalvarConversoesOut"];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description CONFLICT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description RATE_LIMITED */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     resumo_api_v1_clientes__cliente_id__metricas_resumo_get: {
         parameters: {
             query?: {
@@ -3228,6 +3514,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GrupoChavesOut"][];
+                };
+            };
+            /** @description UNAUTHENTICATED */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description FORBIDDEN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description CONFLICT */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description VALIDATION_ERROR */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description RATE_LIMITED */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    versoes_api_em_uso_api_v1_configuracoes_versoes_api_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersaoApiOut"][];
                 };
             };
             /** @description UNAUTHENTICATED */

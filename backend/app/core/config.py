@@ -9,6 +9,14 @@ from typing import Annotated, Literal
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+from app.core import versoes_api
+from app.core.versoes_api import (
+    GOOGLE_ADS_API_VERSION_PADRAO,
+    LINKEDIN_API_VERSION_PADRAO,
+    META_GRAPH_VERSION_PADRAO,
+    TIKTOK_API_VERSION_PADRAO,
+)
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
@@ -45,24 +53,24 @@ class Settings(BaseSettings):
     # Meta Marketing API
     meta_app_id: str | None = None
     meta_app_secret: str | None = None
-    meta_graph_version: str = "v21.0"
+    meta_graph_version: str = META_GRAPH_VERSION_PADRAO
 
     # Google Ads API (OAuth separado do login interno)
     google_ads_client_id: str | None = None
     google_ads_client_secret: str | None = None
     google_ads_developer_token: str | None = None
     google_ads_login_customer_id: str | None = None
-    google_ads_api_version: str = "v18"
+    google_ads_api_version: str = GOOGLE_ADS_API_VERSION_PADRAO
 
     # LinkedIn Marketing API (app com o produto Advertising API aprovado)
     linkedin_client_id: str | None = None
     linkedin_client_secret: str | None = None
-    linkedin_api_version: str = "202410"  # cabeçalho LinkedIn-Version (AAAAMM)
+    linkedin_api_version: str = LINKEDIN_API_VERSION_PADRAO  # cabeçalho LinkedIn-Version (AAAAMM)
 
     # TikTok Business API (Marketing API)
     tiktok_app_id: str | None = None
     tiktok_app_secret: str | None = None
-    tiktok_api_version: str = "v1.3"
+    tiktok_api_version: str = TIKTOK_API_VERSION_PADRAO
 
     # Contas que veem e alteram todas as chaves das plataformas (Configurações).
     # Admin e gestor só preenchem chaves ainda vazias, pelo modal de Conectar.
@@ -94,6 +102,8 @@ class Settings(BaseSettings):
     # Alertas (SPEC-07): webhook (Slack/Google Chat/Teams compatível com JSON {"text"}).
     alert_webhook_url: str | None = None
     alert_sync_falhas_consecutivas: int = 3
+    # Avisa quando a versão de API de uma plataforma vai ser desligada em até N dias (M01).
+    alert_versao_api_dias: int = 60
 
     # Relatórios (SPEC-05): storage privado local (volume) e retenção dos PDFs.
     reports_storage_dir: str = "/var/lib/v4insights/relatorios"
@@ -118,6 +128,30 @@ class Settings(BaseSettings):
     def _split_keys(cls, v: object) -> object:
         if isinstance(v, str):
             return [k.strip() for k in v.split(",") if k.strip()]
+        return v
+
+    # Vazias ou já desligadas pela plataforma (ex.: o v18 e o 202410 de .env antigos) usam a
+    # versão padrão do sistema; ver app/core/versoes_api.py.
+    @field_validator("google_ads_api_version", mode="before")
+    @classmethod
+    def _google_ads_versao_ativa(cls, v: object) -> object:
+        return versoes_api.google_ads_versao_ativa(v) if v is None or isinstance(v, str) else v
+
+    @field_validator("meta_graph_version", mode="before")
+    @classmethod
+    def _meta_versao_ativa(cls, v: object) -> object:
+        return versoes_api.meta_versao_ativa(v) if v is None or isinstance(v, str) else v
+
+    @field_validator("linkedin_api_version", mode="before")
+    @classmethod
+    def _linkedin_versao_ativa(cls, v: object) -> object:
+        return versoes_api.linkedin_versao_ativa(v) if v is None or isinstance(v, str) else v
+
+    @field_validator("tiktok_api_version", mode="before")
+    @classmethod
+    def _tiktok_versao(cls, v: object) -> object:
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return TIKTOK_API_VERSION_PADRAO
         return v
 
     @field_validator("encryption_key")

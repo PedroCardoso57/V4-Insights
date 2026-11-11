@@ -105,6 +105,11 @@ def raise_for_response(resp: httpx.Response, permission_codes: set[int] | None =
             retry_after = float(ra)
         except ValueError:
             retry_after = None
+    if code == 426:
+        # LinkedIn (NONEXISTENT_VERSION): a versão pedida já foi desligada. Não adianta repetir.
+        raise ProviderError(
+            f"versão da API desligada pela plataforma; atualize. HTTP {code}: {detail}"
+        )
     if code == 429 or code >= 500:
         raise RetryableProviderError(f"HTTP {code}: {detail}", retry_after=retry_after)
     if code in (401, 403) or (permission_codes and code in permission_codes):
@@ -160,6 +165,11 @@ def aplicar_mapeamento(
     if not tipos:
         return None, None
     janela = mapeamento.get("janela") or "value"
+    # `acao_valor` (M04): ações cujo valor vira "valor de conversões" (ex.: só compra, enquanto
+    # conversões somam compra + lead). Ausente: o valor vem das mesmas ações contadas.
+    tipos_valor = mapeamento.get("acao_valor")
+    if tipos_valor is None:
+        tipos_valor = tipos
     acoes = detalhe.get("acoes") or {}
     valores = detalhe.get("valores") or {}
     total = Decimal(0)
@@ -167,6 +177,7 @@ def aplicar_mapeamento(
     tem_valor = False
     for t in tipos:
         total += to_decimal((acoes.get(t) or {}).get(janela))
+    for t in tipos_valor:
         v = (valores.get(t) or {}).get(janela)
         if v is not None:
             tem_valor = True

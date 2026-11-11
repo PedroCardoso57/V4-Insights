@@ -145,3 +145,17 @@ def test_gestor_com_email_do_responsavel_nao_tem_acesso_total(factory) -> None:
     assert gestor.get("/auth/me").json()["responsavel_chaves"] is False
     r = gestor.put("/configuracoes/chaves", json={"valores": {"meta_app_id": "x"}})
     assert r.status_code == 403
+
+
+def test_versoes_api_so_para_o_responsavel(factory) -> None:
+    comum = factory.login(factory.usuario("admin"))
+    assert comum.get("/configuracoes/versoes-api").status_code == 403
+    gestor = factory.login(factory.usuario("gestor"))
+    assert gestor.get("/configuracoes/versoes-api").status_code == 403
+    resp = factory.login(factory.usuario("admin", email=RESPONSAVEL))
+    r = resp.get("/configuracoes/versoes-api")
+    assert r.status_code == 200
+    por = {v["plataforma"]: v for v in r.json()}
+    assert set(por) == {"meta_ads", "google_ads", "linkedin_ads", "tiktok_ads"}
+    assert por["google_ads"]["desliga_em"] and por["google_ads"]["situacao"] in ("ok", "atencao")
+    assert por["tiktok_ads"]["situacao"] == "sem_data"
