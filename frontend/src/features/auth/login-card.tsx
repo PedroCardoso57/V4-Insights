@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { InfoIcon, ShieldAlertIcon } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
@@ -13,6 +14,7 @@ import { usePreCarregarNico } from "@/components/mascote/nico-andando";
 import { useLoginSenha } from "@/features/auth/api";
 import { NicoEntrando, PASSAGEM_MS, type EstadoEntrada } from "@/features/auth/nico-entrando";
 import { consultaMe } from "@/hooks/use-me";
+import { PAGINAS_LEGAIS } from "@/lib/legal";
 import { ApiError, loginUrl } from "@/services/api/client";
 
 const schema = z.object({
@@ -239,6 +241,13 @@ export function LoginCard() {
         <strong className="font-medium text-white/70">V4 Bounnacorso</strong>. Não há cadastro público: o acesso é
         concedido por um administrador.
       </p>
+      <nav aria-label="Documentos" className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[10px] text-white/40">
+        {PAGINAS_LEGAIS.map((p) => (
+          <Link key={p.href} href={p.href} className="hover:text-white/70 hover:underline">
+            {p.titulo}
+          </Link>
+        ))}
+      </nav>
 
       <NicoEntrando estado={entrada} />
     </section>

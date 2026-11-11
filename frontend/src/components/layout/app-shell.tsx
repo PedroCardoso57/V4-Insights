@@ -90,7 +90,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             <strong>V4 Insights</strong> — Plataforma Interna de Inteligência de Marketing · Unidade{" "}
             <strong>V4 Bounnacorso</strong>
           </span>
-          <span className="font-mono-num">Fontes: Meta, Google, LinkedIn &amp; TikTok Ads · uso exclusivo de colaboradores</span>
+          <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="font-mono-num">Fontes: Meta, Google, LinkedIn &amp; TikTok Ads · uso exclusivo de colaboradores</span>
+            <Link href="/privacidade" className="hover:text-foreground hover:underline">Privacidade</Link>
+            <Link href="/termos" className="hover:text-foreground hover:underline">Termos</Link>
+          </span>
         </footer>
       </div>
       <BarraInferior onMais={() => setMenu(true)} menuAberto={menu} />
