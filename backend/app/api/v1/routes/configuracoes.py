@@ -10,11 +10,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import GERENCIA, Principal, require_roles
-from app.core import chaves
+from app.core import chaves, versoes_api
 from app.core.config import get_settings
 from app.db.session import get_db
 from app.models import Papel
-from app.schemas import CampoChaveOut, ChavesIn, GrupoChavesOut
+from app.schemas import CampoChaveOut, ChavesIn, GrupoChavesOut, VersaoApiOut
 from app.services.audit import registrar
 
 router = APIRouter(prefix="/configuracoes", tags=["configuracoes"])
@@ -91,3 +91,34 @@ def salvar_chaves(
     db.commit()
     chaves.limpar_cache()
     return _grupos()
+
+
+@router.get("/versoes-api", response_model=list[VersaoApiOut])
+def versoes_api_em_uso(
+    principal: Principal = Depends(require_roles(Papel.admin)),
+) -> list[VersaoApiOut]:
+    """Versões das APIs das plataformas em uso e data de desligamento (card Status operacional,
+    só para o responsável pelas chaves)."""
+    if not chaves.eh_responsavel(principal.usuario.email):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Apenas o responsável pelas chaves")
+    limite = get_settings().alert_versao_api_dias
+    saida: list[VersaoApiOut] = []
+    for v in versoes_api.versoes_em_uso():
+        if v.dias_restantes is None:
+            situacao = "sem_data"
+        elif v.dias_restantes <= 0:
+            situacao = "desligada"
+        elif v.dias_restantes <= limite:
+            situacao = "atencao"
+        else:
+            situacao = "ok"
+        saida.append(
+            VersaoApiOut(
+                plataforma=v.plataforma,
+                versao=v.versao,
+                desliga_em=v.desliga_em,
+                dias_restantes=v.dias_restantes,
+                situacao=situacao,
+            )
+        )
+    return saida

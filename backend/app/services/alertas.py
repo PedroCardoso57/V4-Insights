@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import logging
 import shutil
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import httpx
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
+from app.core import versoes_api
 from app.core.config import get_settings
 from app.core.sanitize import sanitize
 from app.models import Cliente, ContaAnuncio, Integracao, StatusIntegracao, SyncJob
@@ -72,6 +73,22 @@ def sync_com_erro_persistente(db: Session) -> list[str]:
     return problemas
 
 
+def versoes_api_vencendo(hoje: date | None = None) -> list[str]:
+    """Versões de API em uso que a plataforma desliga em breve (ou já desligou)."""
+    limite = get_settings().alert_versao_api_dias
+    avisos: list[str] = []
+    for v in versoes_api.versoes_em_uso(hoje):
+        if v.dias_restantes is None or v.dias_restantes > limite:
+            continue
+        quando = (
+            "já foi desligada"
+            if v.dias_restantes <= 0
+            else f"será desligada em {v.desliga_em:%d/%m/%Y} ({v.dias_restantes} dias)"
+        )
+        avisos.append(f"{v.plataforma}: a versão {v.versao} da API {quando}. Atualize a versão.")
+    return avisos
+
+
 def verificar(db: Session) -> int:
     """Executado periodicamente pelo beat. Retorna quantos alertas foram disparados."""
     enviados = 0
@@ -81,6 +98,8 @@ def verificar(db: Session) -> int:
         return int(enviar("readiness-db", "Banco de dados indisponível para o worker."))
     for p in sync_com_erro_persistente(db):
         enviados += enviar(f"sync:{p}", f"Erro persistente de sincronização — {p}")
+    for aviso in versoes_api_vencendo():
+        enviados += enviar(f"versao-api:{aviso.split(':')[0]}", aviso)
     uso = shutil.disk_usage(get_settings().reports_storage_dir)
     pct = 100 * uso.used / uso.total
     if pct >= 85:

@@ -225,6 +225,8 @@ class MetaProvider:
             err = {}
         code = err.get("code")
         msg = f"Meta {resp.status_code} code={code}: {err.get('message', '')[:300]}"
+        if code == 2635:  # versão da Graph API desligada: só resolve trocando a versão
+            raise ProviderError(f"versão da API desligada pela plataforma; atualize. {msg}")
         if code in _RATE_LIMIT_CODES:
             raise RetryableProviderError(msg)
         if code == 190 or code == 10 or (isinstance(code, int) and 200 <= code < 300):
